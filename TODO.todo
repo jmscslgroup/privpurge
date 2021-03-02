@@ -1,0 +1,14 @@
+Overview:
+    ☐ Components to process data
+    ☐ Entry point, and way to call on folders
+    ☐ Command line executable
+
+Preprocessing:
+    ☐ Turn all time zones in both files to GMT
+
+Gps Region:
+    ☐ Read gps csv file to get time regions from privacy zones
+    ☐ Output a list of regions
+
+Data removal:
+    ☐ Split into multiple drives based on time regions
