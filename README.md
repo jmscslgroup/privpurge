@@ -1,5 +1,6 @@
-<h1 align="center">privzone</h1>
-<h4 align="center">Webapp that allows you to associate privacy zones to a car, excluding those zones from data. </h4>
+<h1 align="center">privpurge</h1>
+<h4 align="center">Purging privacy regions from collected data.</h4>
+
 
 <!-- <p align="center">
 <a href="https://github.com/jmscslgroup/privzone/actions?query=workflow%3A%22Code+Test%22"><img alt="Code Test" src="https://github.com/jmscslgroup/privpurge/workflows/Code%20Test/badge.svg"></a>
