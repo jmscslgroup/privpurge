@@ -8,7 +8,7 @@ Preprocessing:
 
 Gps Region:
     ☐ Read gps csv file to get time regions from privacy zones
-    ☐ Output a list of regions
+    ☐ Output a list of time regions to remove
 
 Data removal:
     ☐ Split into multiple drives based on time regions
