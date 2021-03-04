@@ -1,5 +1,4 @@
 import json
-import shapely
 import geopy.distance
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
@@ -39,9 +38,6 @@ class privacy_region:
 
 
 class privacy_circle(privacy_region):
-    def __init__(self, type, data):
-        super().__init__(type, data)
-
     def process_data(self, data):
         self.center = tuple(reversed(data["center"]))  # size 2 tuple
         self.radius = data["radius"]
@@ -54,9 +50,6 @@ class privacy_circle(privacy_region):
 
 
 class privacy_polygon(privacy_region):
-    def __init__(self, type, data):
-        super().__init__(type, data)
-
     def process_data(self, data):
         self.data = [tuple(reversed(a)) for a in data]  # list of coordinates
 
