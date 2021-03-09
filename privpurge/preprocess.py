@@ -7,7 +7,7 @@ from dateutil import tz
 import pytz
 
 
-def make_gmt(candata, gpsdata):
+def standardize_time(candata, gpsdata):
 
     c_one = datetime.fromtimestamp(candata.Time.iloc[0])
     g_one = datetime.fromtimestamp(gpsdata.Gpstime.iloc[0])
@@ -44,6 +44,6 @@ def preprocess(canfile, gpsfile, outdir, zonesfile):
         zones = json.load(f)
 
     gpsdata = fix_gps(gpsdata)
-    candata, gpsdata = make_gmt(candata, gpsdata)
+    candata, gpsdata = standardize_time(candata, gpsdata)
 
     return candata, gpsdata, zones
