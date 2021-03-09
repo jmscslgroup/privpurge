@@ -33,7 +33,7 @@ class privacy_region:
     def intersects(self, coordinate):  # lat, lon
         raise NotImplementedError
 
-    def __str__(self):
+    def __repr__(self):
         raise NotImplementedError
 
 
@@ -45,7 +45,7 @@ class privacy_circle(privacy_region):
     def intersects(self, coordinate):  # latitude [-90, 90], longitude [-180, 180]
         return geopy.distance.distance(coordinate, self.center).m < self.radius
 
-    def __str__(self):
+    def __repr__(self):
         return f"[{self.type}] Center: {self.center}, Radius: {self.radius}"
 
 
@@ -56,5 +56,5 @@ class privacy_polygon(privacy_region):
     def intersects(self, coordinate):  # latitude [-90, 90], longitude [-180, 180]
         return Polygon(self.data).intersects(Point(*coordinate))
 
-    def __str__(self):
+    def __repr__(self):
         return f"[{self.type}]: Coordinates: {self.data}"
