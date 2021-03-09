@@ -9,11 +9,8 @@ class time_region:
     @classmethod
     def create_many(cls, gpsdata, privregions):
 
-        prev = gpsdata.Gpstime.iloc[0]
-        mark = None
-
         intersects = [
-            all(map(lambda reg: reg.intersects((lat, lon)), privregions))
+            any(map(lambda reg: reg.intersects((lat, lon)), privregions))
             for lon, lat in zip(gpsdata.Long, gpsdata.Lat)
         ]
         result = [
