@@ -1,34 +1,53 @@
 import os
 import pandas
 import json
+import itertools
 
 from datetime import datetime, timedelta
 from dateutil import tz
 import pytz
 
 
+def roundTime(dt=None, roundTo=60):
+    if dt == None:
+        dt = datetime.now()
+    seconds = (dt.replace(tzinfo=None) - dt.min).seconds
+    rounding = (seconds + roundTo / 2) // roundTo * roundTo
+    return dt + timedelta(0, rounding - seconds, -dt.microsecond)
+
+
 def standardize_time(candata, gpsdata):
 
     c_one = datetime.fromtimestamp(candata.Time.iloc[0])
-    g_one = datetime.fromtimestamp(gpsdata.Gpstime.iloc[0])
+    g_one = datetime.fromtimestamp(gpsdata.Gpstime.iloc[0])  # gpstime in UTC
 
-    temp = g_one - c_one
-    if 25000 <= temp.seconds <= 25400:
-        r = timedelta(hours=-7)
-    else:
-        raise NotImplementedError
+    diff = roundTime(g_one, 60 * 60) - roundTime(c_one, 60 * 60)
 
-    candata.Time = [(datetime.fromtimestamp(c) + r).timestamp() for c in candata.Time]
-    # gpsdata.Gpstime = [(datetime.fromtimestamp(g) + r).timestamp() for g in gpsdata.Gpstime]
+    candata.Time = [
+        (datetime.fromtimestamp(c) + diff).timestamp() for c in candata.Time
+    ]  # convert can time to gmt (gmt = utc+0)
 
     return candata, gpsdata
 
 
 def fix_gps(gpsdata):  # remove until consecutive negatives stop
 
-    gpsdata["idx"] = gpsdata.index
-    gpsdata = gpsdata[(gpsdata.Gpstime > 0) & (gpsdata.idx == gpsdata.idx.shift() + 1)]
-    del gpsdata["idx"]
+    temp = [
+        list(g)
+        for k, g in itertools.groupby(gpsdata.Gpstime, lambda x: -1 if x < 0 else 1)
+    ]
+    if temp[-1][0] < 0:
+        raise ValueError(
+            "Error found in gpsfile. Last grouped list has negative times."
+        )
+    elif len(temp) > 3:
+        raise ValueError(
+            "Error found in gpsfile. Length of grouped list is greater than three, interspersed negatives."
+        )
+
+    temp = sum([[True if i > 0 else False for i in l] for l in temp], start=[])
+
+    gpsdata = gpsdata[temp]
 
     return gpsdata
 
