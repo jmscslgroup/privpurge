@@ -8,11 +8,9 @@ from dateutil import tz
 import pytz
 
 
-def roundTime(dt=None, roundTo=60):
-    if dt == None:
-        dt = datetime.now()
+def round_time(dt, round_to):
     seconds = (dt.replace(tzinfo=None) - dt.min).seconds
-    rounding = (seconds + roundTo / 2) // roundTo * roundTo
+    rounding = (seconds + round_to / 2) // round_to * round_to
     return dt + timedelta(0, rounding - seconds, -dt.microsecond)
 
 
@@ -21,7 +19,7 @@ def standardize_time(candata, gpsdata):
     c_one = datetime.fromtimestamp(candata.Time.iloc[0])
     g_one = datetime.fromtimestamp(gpsdata.Gpstime.iloc[0])  # gpstime in UTC
 
-    diff = roundTime(g_one, 60 * 60) - roundTime(c_one, 60 * 60)
+    diff = round_time(g_one, 60 * 60) - round_time(c_one, 60 * 60)
 
     candata.Time = [
         (datetime.fromtimestamp(c) + diff).timestamp() for c in candata.Time
