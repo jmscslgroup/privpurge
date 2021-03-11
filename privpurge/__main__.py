@@ -1,6 +1,7 @@
 import argparse
 import os
 import traceback
+import sys
 
 from .preprocess import preprocess
 from .utils import get_zonesfile, write_files, write_error
@@ -30,6 +31,10 @@ def get_arguments():
     optional.add_argument(
         "-h", "--help", action="help", help="Show this help message and exit"
     )
+
+    if len(sys.argv) == 1:
+        parser.print_usage()
+        sys.exit(1)
 
     return parser.parse_args()
 
