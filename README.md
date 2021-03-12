@@ -13,3 +13,7 @@
 ## Installing
 
 - `pip install git+https://github.com/jmscslgroup/privpurge`
+
+## Running
+
+- `privpurge <CANFILE> <GPSFILE> -o <OUTPUT_DIR>`
