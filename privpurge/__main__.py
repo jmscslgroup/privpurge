@@ -51,10 +51,19 @@ def main():
     canfile = args.can
     gpsfile = args.gps
     outdir = os.path.join(os.getcwd(), args.output)
-    zonesfile = args.zones if args.zones else get_zonesfile(canfile)
 
-    orig_time, vin = check_parse_files(canfile, gpsfile, zonesfile)
-    error_date = gmt_error_date(canfile, gpsfile)
+    try:
+        zonesfile = args.zones if args.zones else get_zonesfile(canfile)
+
+        orig_time, vin = check_parse_files(canfile, gpsfile, zonesfile)
+        error_date = gmt_error_date(canfile, gpsfile)
+    except Exception as err:
+        print("Encountered an error during setup.")
+        if len(err.args) > 1:
+            print(err.args[1])
+        else:
+            print(err.args[0])
+        sys.exit(-1)
 
     try:
 
