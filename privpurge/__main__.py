@@ -4,9 +4,16 @@ import traceback
 import sys
 
 from .preprocess import preprocess
-from .utils import get_zonesfile, write_files, write_error
+from .utils import (
+    get_zonesfile,
+    write_files,
+    write_error,
+    check_parse_files,
+    gmt_error_date,
+)
 from .privacy_region import privacy_region
 from .time_region import time_region
+from .process import remove
 
 
 def get_arguments():
@@ -46,18 +53,22 @@ def main():
     outdir = os.path.join(os.getcwd(), args.output)
     zonesfile = args.zones if args.zones else get_zonesfile(canfile)
 
+    orig_time, vin = check_parse_files(canfile, gpsfile, zonesfile)
+    error_date = gmt_error_date(canfile, gpsfile)
+
     try:
+
         candata, gpsdata, zones = preprocess(canfile, gpsfile, outdir, zonesfile)
 
         privregions = privacy_region.create_many(zones)
         timeregions = time_region.create_many(gpsdata, privregions)
 
-        # remove from files
+        filepairs = remove(candata, gpsdata, timeregions)
 
-        write_files((canfile, candata), (gpsfile, gpsdata), outdir)
+        write_files(filepairs, vin, outdir)
 
     except Exception as e:
-        write_error(traceback.format_exc(), canfile, outdir)
+        write_error(error_date, vin, traceback.format_exc(), outdir)
 
 
 if __name__ == "__main__":
