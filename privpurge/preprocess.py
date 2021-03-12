@@ -3,15 +3,11 @@ import pandas
 import json
 import itertools
 
-from datetime import datetime, timedelta
+from datetime import datetime
 from dateutil import tz
 import pytz
 
-
-def round_time(dt, round_to):
-    seconds = (dt.replace(tzinfo=None) - dt.min).seconds
-    rounding = (seconds + round_to / 2) // round_to * round_to
-    return dt + timedelta(0, rounding - seconds, -dt.microsecond)
+from .utils import round_time
 
 
 def standardize_time(candata, gpsdata):
