@@ -38,9 +38,9 @@ def write_error(err_date, vin, err, outputdir):
     with open(filepath, "w") as f:
         f.write(err)
 
-    print(f"Encountered an during proccesing.\nSaved error file as {filepath}.")
+    print(f"Encountered an error during proccesing.\nSaved error file as {filepath}.")
 
-    sys.exit(-1)
+    sys.exit(-2)
 
 
 def gmt_error_date(canfile, gpsfile):
