@@ -4,7 +4,7 @@ import sys
 
 from datetime import datetime, timedelta
 
-CAN_GPS_SEARCH = r"(\d{4}(?:-\d{2}){5})_(.{17})_(?:CAN|GPS)_Messages.csv"
+CAN_GPS_SEARCH = r"(\d{4}(?:-\d{2}){5})_(.{17})_(?:CAN|GPS)_Messages?.csv"
 ZONE_SEARCH = r"zonefile_(.{17}).json"
 
 
@@ -15,7 +15,7 @@ def round_time(dt, round_to):
 
 
 def get_zonesfile(canfile):
-    return "file"
+    raise NotImplementedError("Currently must provide a zonefile with -z flag.")
 
 
 def write_files(filepairs, vin, outputdir):
