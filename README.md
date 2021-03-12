@@ -16,4 +16,9 @@
 
 ## Running
 
-- `privpurge <CANFILE> <GPSFILE> -o <OUTPUT_DIR>`
+- `privpurge <CANFILE> <GPSFILE> -o <OUTPUT_DIR> -z <ZONEFILE>`
+
+## Format (regex)
+
+- Can/Gps Files: `r"(\d{4}(?:-\d{2}){5})_(.{17})_(?:CAN|GPS)_Messages?.csv"`
+- Zonefiles: `r"zonefile_(.{17}).json"`
