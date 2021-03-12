@@ -27,8 +27,8 @@ class time_region:
 
         return result
 
-    def intersects(self, time):
-        pass
-
     def __repr__(self):
         return f"{(self.start, self.end)}"
+
+    def __matmul__(self, df):  # intersection with dataframes
+        return df.loc[(self.start <= df) & (df <= self.end)].index.to_list()
