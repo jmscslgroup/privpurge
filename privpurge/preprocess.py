@@ -49,7 +49,7 @@ def fix_gps(gpsdata):  # remove until consecutive negatives stop
 def preprocess(canfile, gpsfile, outdir, zonesfile):
 
     if not os.path.isdir(outdir):
-        os.mkdir(outdir)
+        os.makedirs(outdir)
 
     candata = pandas.read_csv(canfile)
     gpsdata = pandas.read_csv(gpsfile)
