@@ -11,4 +11,4 @@ Gps Region:
     ✔ Output a list of time regions to remove @done(21-03-09)
 
 Data removal:
-    ☐ Split into multiple drives based on time regions
+    ✔ Split into multiple drives based on time regions @done(21-03-11)
