@@ -13,3 +13,7 @@ Gps Region:
 
 Data removal:
     ✔ Split into multiple drives based on time regions @done(21-03-11)
+
+Discussion:
+    - New output is larger due to float representation
+    - What to do when empty files are passed with regards to filenames
