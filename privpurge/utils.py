@@ -1,5 +1,5 @@
 import os
-import regex as re
+import re
 import sys
 
 from datetime import datetime, timedelta

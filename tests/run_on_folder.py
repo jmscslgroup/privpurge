@@ -1,6 +1,6 @@
 import itertools
 import os
-import regex as re
+import re
 
 import privpurge
 
@@ -42,4 +42,4 @@ import sys
 if len(sys.argv[1:]) > 2:
     print("pass only input folder and output folder")
 else:
-    run_folder(sys.argv[1:])
+    run_folder(*sys.argv[1:])

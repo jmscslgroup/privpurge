@@ -4,7 +4,7 @@ import folium
 import folium.plugins
 import tempfile
 import os
-import regex as re
+import re
 
 
 def plot_privpurge(message, outdir, filename=None):
