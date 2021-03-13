@@ -8,6 +8,14 @@ from datetime import datetime
 from .utils import round_time
 
 
+def trim_bad_ends(df):
+    if any(sum(df.iloc[-1:].isnull().values.tolist(), start=[])):
+        df = df[:-1]
+    if any(sum(df.iloc[:1].isnull().values.tolist(), start=[])):
+        df = df[1:]
+    return df
+
+
 def standardize_time(candata, gpsdata):
 
     c_one = datetime.fromtimestamp(candata.Time.iloc[0])
@@ -55,6 +63,9 @@ def preprocess(canfile, gpsfile, outdir, zonesfile):
         zones = json.load(f)
 
     gpsdata = fix_gps(gpsdata)
+    gpsdata = trim_bad_ends(gpsdata)
+    candata = trim_bad_ends(candata)
+
     candata, gpsdata = standardize_time(candata, gpsdata)
 
     return candata, gpsdata, zones

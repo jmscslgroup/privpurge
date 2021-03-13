@@ -9,6 +9,7 @@ from .process import remove
 from .time_region import time_region
 from .utils import (
     check_parse_files,
+    csv_is_empty,
     gmt_error_date,
     get_zonesfile,
     write_files,
@@ -46,24 +47,25 @@ def get_arguments():
     return parser.parse_args()
 
 
-def main():
-    args = get_arguments()
-    canfile = args.can
-    gpsfile = args.gps
-    outdir = os.path.join(os.getcwd(), args.output)
+def run(canfile, gpsfile, outdir, zonesfile):
 
     try:
-        zonesfile = args.zones if args.zones else get_zonesfile(canfile)
 
         orig_time, vin = check_parse_files(canfile, gpsfile, zonesfile)
+        if any(map(csv_is_empty, (canfile, gpsfile))):
+            if not os.path.isdir(outdir):
+                os.makedirs(outdir)
+            write_files([(canfile, gpsfile)], vin, outdir, empty=orig_time)
+            return 0
         error_date = gmt_error_date(canfile, gpsfile)
+
     except Exception as err:
         print("Encountered an error during setup.")
         if len(err.args) > 1:
             print(err.args[1])
         else:
             print(err.args[0])
-        sys.exit(-1)
+        return -1
 
     try:
 
@@ -78,6 +80,20 @@ def main():
 
     except Exception as e:
         write_error(error_date, vin, traceback.format_exc(), outdir)
+        return -2
+
+    return 0
+
+
+def main():
+    args = get_arguments()
+    canfile = args.can
+    gpsfile = args.gps
+    outdir = args.output
+    zonesfile = args.zones if args.zones else get_zonesfile(canfile)
+
+    code = run(canfile, gpsfile, outdir, zonesfile)
+    sys.exit(code)
 
 
 if __name__ == "__main__":
