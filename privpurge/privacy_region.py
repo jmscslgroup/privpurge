@@ -1,5 +1,5 @@
-import json
 import geopy.distance
+
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
 

@@ -1,11 +1,9 @@
-import os
-import pandas
-import json
 import itertools
+import json
+import os
+import pandas as pd
 
 from datetime import datetime
-from dateutil import tz
-import pytz
 
 from .utils import round_time
 
@@ -51,8 +49,8 @@ def preprocess(canfile, gpsfile, outdir, zonesfile):
     if not os.path.isdir(outdir):
         os.makedirs(outdir)
 
-    candata = pandas.read_csv(canfile)
-    gpsdata = pandas.read_csv(gpsfile)
+    candata = pd.read_csv(canfile)
+    gpsdata = pd.read_csv(gpsfile)
     with open(zonesfile, "r") as f:
         zones = json.load(f)
 

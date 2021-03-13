@@ -1,19 +1,19 @@
 import argparse
 import os
-import traceback
 import sys
+import traceback
 
 from .preprocess import preprocess
+from .privacy_region import privacy_region
+from .process import remove
+from .time_region import time_region
 from .utils import (
+    check_parse_files,
+    gmt_error_date,
     get_zonesfile,
     write_files,
     write_error,
-    check_parse_files,
-    gmt_error_date,
 )
-from .privacy_region import privacy_region
-from .time_region import time_region
-from .process import remove
 
 
 def get_arguments():
