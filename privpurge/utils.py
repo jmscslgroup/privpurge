@@ -8,6 +8,17 @@ CAN_GPS_SEARCH = r"(\d{4}(?:-\d{2}){5})_(.{17})_(?:CAN|GPS)_Messages?.csv"
 ZONE_SEARCH = r"zonefile_(.{17}).json"
 
 
+def csv_is_empty(filename):
+    with open(filename) as f:
+        l = f.readline()
+        l2 = f.readline()
+
+    if not l or not l2:
+        return True
+    else:
+        return False
+
+
 def round_time(dt, round_to):
     seconds = (dt.replace(tzinfo=None) - dt.min).seconds
     rounding = (seconds + round_to / 2) // round_to * round_to
@@ -18,15 +29,30 @@ def get_zonesfile(canfile):
     raise NotImplementedError("Currently must provide a zonefile with -z flag.")
 
 
-def write_files(filepairs, vin, outputdir):
+def write_files(filepairs, vin, outputdir, empty=None):
 
     for cdata, gdata in filepairs:
 
-        date = datetime.fromtimestamp(cdata.Time.iloc[0]).strftime("%Y-%m-%d-%H-%M-%S")
-        name = f"{date}_{vin}_{{}}_Messages.csv"
+        if not empty:
+            date = datetime.fromtimestamp(cdata.Time.iloc[0]).strftime(
+                "%Y-%m-%d-%H-%M-%S"
+            )
+            name = f"{date}_{vin}_{{}}_Messages.csv"
+            cdata.to_csv(os.path.join(outputdir, name.format("CAN")), index=False)
+            gdata.to_csv(os.path.join(outputdir, name.format("GPS")), index=False)
+        else:
+            date = empty
+            name = f"{date}_{vin}_{{}}_Messages.csv"
 
-        cdata.to_csv(os.path.join(outputdir, name.format("CAN")), index=False)
-        gdata.to_csv(os.path.join(outputdir, name.format("GPS")), index=False)
+            with open(os.path.join(outputdir, name.format("CAN")), "w") as fw, open(
+                cdata
+            ) as fr:
+                fw.write(fr.read())
+
+            with open(os.path.join(outputdir, name.format("GPS")), "w") as fw, open(
+                gdata
+            ) as fr:
+                fw.write(fr.read())
 
 
 def write_error(err_date, vin, err, outputdir):
@@ -40,8 +66,6 @@ def write_error(err_date, vin, err, outputdir):
 
     print(f"Encountered an error during proccesing.\nSaved error file as {filepath}.")
 
-    sys.exit(-2)
-
 
 def gmt_error_date(canfile, gpsfile):
 
@@ -52,6 +76,8 @@ def gmt_error_date(canfile, gpsfile):
     with open(gpsfile, "r") as f:
         f.readline()
         g = f.readline().split(",")[0]
+        while float(g) < 0:  # get first non-negative time to use
+            g = f.readline().split(",")[0]
 
     c = datetime.fromtimestamp(float(c))
     g = datetime.fromtimestamp(float(g))
