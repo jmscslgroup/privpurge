@@ -59,12 +59,18 @@ def preprocess(canfile, gpsfile, outdir, zonesfile):
 
     candata = pd.read_csv(canfile)
     gpsdata = pd.read_csv(gpsfile)
+
     with open(zonesfile, "r") as f:
         zones = json.load(f)
 
     gpsdata = fix_gps(gpsdata)
     gpsdata = trim_bad_ends(gpsdata)
     candata = trim_bad_ends(candata)
+
+    candata = candata.fillna(0)
+    candata["Bus"] = candata["Bus"].astype(int)
+    candata["MessageID"] = candata["MessageID"].astype(int)
+    candata["MessageLength"] = candata["MessageLength"].astype(int)
 
     candata, gpsdata = standardize_time(candata, gpsdata)
 

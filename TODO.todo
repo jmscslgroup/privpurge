@@ -15,5 +15,6 @@ Data removal:
     ✔ Split into multiple drives based on time regions @done(21-03-11)
 
 Discussion:
-    - New output is larger due to float representation
-    - What to do when empty files are passed with regards to filenames
+    - Better way of removing sections from dataframe, and splitting
+    ✔ New output is larger due to float representation (convert to int) @done(21-03-15)
+    ✔ What to do when empty files are passed with regards to filenames (copy over with same name) @done(21-03-15)
