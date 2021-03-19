@@ -16,7 +16,7 @@
 
 ## Running
 
-- `privpurge <CANFILE> <GPSFILE> -o <OUTPUT_DIR> -z <ZONEFILE>`
+- `privpurge <CANFILE> <GPSFILE> -z <ZONEFILE> -o <OUTPUT_DIR>`
 
 ## Format (regex)
 
@@ -34,6 +34,6 @@
 docker run --rm \ 
     -v <ZONE_PATH>:/zone \
     -v <DATA_PATH>:/data \ 
-    -v <OUTPATH>:/build  \
+    -v <OUT_PATH>:/build \
     rpgolota/privpurge <CANFILE> <GPSFILE> -z /zone/<ZONEFILE> -o /build
 ```
