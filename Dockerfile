@@ -8,7 +8,7 @@ COPY requirements.txt .
 COPY setup.py .
 COPY privpurge/ privpurge
 
-RUN python -m pip install --user -v .
+RUN python -m pip install --user .
 
 
 # Production

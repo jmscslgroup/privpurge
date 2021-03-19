@@ -22,3 +22,17 @@
 
 - Can/Gps Files: `r"(\d{4}(?:-\d{2}){5})_(.{17})_(?:CAN|GPS)_Messages?.csv"`
 - Zonefiles: `r"zonefile_(.{17}).json"`
+
+## Running as a container
+
+- Use the following command to run
+- Volumes are just recommendations, and do not need to be used.
+- Only default directory is /data, in which the working directory is located by default
+
+```
+docker run --rm \ 
+    -v <ZONE_PATH>:/zone \
+    -v <DATA_PATH>:/data \ 
+    -v <OUTPATH>:/build  \
+    rpgolota/privpurge <CANFILE> <GPSFILE> -z /zone/<ZONEFILE> -o /build
+```
