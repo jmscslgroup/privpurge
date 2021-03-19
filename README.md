@@ -25,9 +25,10 @@
 
 ## Running as a container
 
-- Use the following command to run
-- Volumes are just recommendations, and do not need to be used.
-- Only default directory is /data, in which the working directory is located by default
+- Volumes are just recommendations, and do not need to be used in the way shown.
+- Only default directory is /data, in which the working directory is located. Can be overwritten by -w flag.
+
+#####Use the following command to run
 
 ```
 docker run --rm \ 
