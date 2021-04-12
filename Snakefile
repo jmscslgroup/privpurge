@@ -46,11 +46,12 @@ CREATE_SCRIPT = """
                     -z /{input.zonefile}                    \
                     -o /build 2> "$TMP") || evar=$? && true;
                 err=$(cat "$TMP")
-                if [ $evar -eq 0 ]
+                if [ $evar -eq 0 ];
                 then
                     echo $res > {output}
                 else
                     echo $err > {params.errfile}
+                    return $evar
                 fi
                 """
 
