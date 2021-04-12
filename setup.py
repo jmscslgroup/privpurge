@@ -8,9 +8,7 @@ def get_version():
 
 def get_requirements():
     with open("requirements.txt") as f:
-        lines = f.read()
-
-    lines = lines.strip().split("\n")
+        lines = f.read().strip().split("\n")
     return lines
 
 

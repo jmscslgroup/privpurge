@@ -25,11 +25,9 @@ def round_time(dt, round_to):
     return dt + timedelta(0, rounding - seconds, -dt.microsecond)
 
 
-def get_zonesfile(canfile):
-    raise NotImplementedError("Currently must provide a zonefile with -z flag.")
-
-
 def write_files(filepairs, vin, outputdir, empty=None):
+
+    pairnames = []
 
     for cdata, gdata in filepairs:
 
@@ -38,12 +36,13 @@ def write_files(filepairs, vin, outputdir, empty=None):
                 "%Y-%m-%d-%H-%M-%S"
             )
             name = f"{date}_{vin}_{{}}_Messages.csv"
+            pairnames.append((name.format("CAN"), name.format("GPS")))
             cdata.to_csv(os.path.join(outputdir, name.format("CAN")), index=False)
             gdata.to_csv(os.path.join(outputdir, name.format("GPS")), index=False)
         else:
             date = empty
             name = f"{date}_{vin}_{{}}_Messages.csv"
-
+            pairnames.append((name.format("CAN"), name.format("GPS")))
             with open(os.path.join(outputdir, name.format("CAN")), "w") as fw, open(
                 cdata
             ) as fr:
@@ -54,17 +53,18 @@ def write_files(filepairs, vin, outputdir, empty=None):
             ) as fr:
                 fw.write(fr.read())
 
+    return pairnames
 
-def write_error(err_date, vin, err, outputdir):
 
-    name = f"{err_date}_{vin}_ERROR.txt"
-
-    filepath = os.path.join(outputdir, name)
-
-    with open(filepath, "w") as f:
-        f.write(err)
-
-    print(f"Encountered an error during proccesing.\nSaved error file as {filepath}.")
+def print_info(canfile, gpsfile, pairnames):
+    print(f"Input:")
+    print(f"    {canfile}")
+    print(f"    {gpsfile}")
+    print()
+    print(f"Output:")
+    for can, gps in pairnames:
+        print(f"    {can}")
+        print(f"    {gps}")
 
 
 def gmt_error_date(canfile, gpsfile):

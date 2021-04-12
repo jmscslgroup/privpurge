@@ -2,7 +2,7 @@ Overview:
     ✔ Components to process data @done(21-03-09)
     ✔ Entry point, and way to call @done(21-03-09)
     ✔ Command line executable @done(21-03-09)
-    ☐ Function to get zone file from vin
+    ☐ Add output
 
 Preprocessing:
     ✔ Turn all time zones in both files to MST @done(21-03-09)

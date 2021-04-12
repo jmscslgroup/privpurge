@@ -11,9 +11,8 @@ from .utils import (
     check_parse_files,
     csv_is_empty,
     gmt_error_date,
-    get_zonesfile,
+    print_info,
     write_files,
-    write_error,
 )
 
 
@@ -32,10 +31,10 @@ def get_arguments():
     required.add_argument(
         "-o", "--output", help="specify output directory", required=True
     )
-
-    optional.add_argument(
-        "-z", "--zones", help="specify file for privacy zones", required=False
+    required.add_argument(
+        "-z", "--zones", help="specify file for privacy zones", required=True
     )
+
     optional.add_argument(
         "-h", "--help", action="help", help="Show this help message and exit"
     )
@@ -49,40 +48,23 @@ def get_arguments():
 
 def run(canfile, gpsfile, outdir, zonesfile):
 
-    try:
+    orig_time, vin = check_parse_files(canfile, gpsfile, zonesfile)
+    if any(map(csv_is_empty, (canfile, gpsfile))):
+        if not os.path.isdir(outdir):
+            os.makedirs(outdir)
+        write_files([(canfile, gpsfile)], vin, outdir, empty=orig_time)
+        return
 
-        orig_time, vin = check_parse_files(canfile, gpsfile, zonesfile)
-        if any(map(csv_is_empty, (canfile, gpsfile))):
-            if not os.path.isdir(outdir):
-                os.makedirs(outdir)
-            write_files([(canfile, gpsfile)], vin, outdir, empty=orig_time)
-            return 0
-        error_date = gmt_error_date(canfile, gpsfile)
+    candata, gpsdata, zones = preprocess(canfile, gpsfile, outdir, zonesfile)
 
-    except Exception as err:
-        print("Encountered an error during setup.")
-        if len(err.args) > 1:
-            print(err.args[1])
-        else:
-            print(err.args[0])
-        return -1
+    privregions = privacy_region.create_many(zones)
+    timeregions = time_region.create_many(gpsdata, privregions)
 
-    try:
+    filepairs = remove(candata, gpsdata, timeregions)
 
-        candata, gpsdata, zones = preprocess(canfile, gpsfile, outdir, zonesfile)
+    pairnames = write_files(filepairs, vin, outdir)
 
-        privregions = privacy_region.create_many(zones)
-        timeregions = time_region.create_many(gpsdata, privregions)
-
-        filepairs = remove(candata, gpsdata, timeregions)
-
-        write_files(filepairs, vin, outdir)
-
-    except Exception as e:
-        write_error(error_date, vin, traceback.format_exc(), outdir)
-        return -2
-
-    return 0
+    print_info(os.path.basename(canfile), os.path.basename(gpsfile), pairnames)
 
 
 def main():
@@ -90,10 +72,9 @@ def main():
     canfile = args.can
     gpsfile = args.gps
     outdir = args.output
-    zonesfile = args.zones if args.zones else get_zonesfile(canfile)
+    zonesfile = args.zones
 
-    code = run(canfile, gpsfile, outdir, zonesfile)
-    sys.exit(code)
+    run(canfile, gpsfile, outdir, zonesfile)
 
 
 if __name__ == "__main__":
