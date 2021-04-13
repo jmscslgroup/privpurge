@@ -25,33 +25,32 @@ def round_time(dt, round_to):
     return dt + timedelta(0, rounding - seconds, -dt.microsecond)
 
 
-def write_files(filepairs, vin, outputdir, empty=None):
+def write_files(filepairs, vin, outputdir, empty=None, disable_output=False):
 
     pairnames = []
 
     for cdata, gdata in filepairs:
 
-        if not empty:
-            date = datetime.fromtimestamp(cdata.Time.iloc[0]).strftime(
-                "%Y-%m-%d-%H-%M-%S"
-            )
-            name = f"{date}_{vin}_{{}}_Messages.csv"
-            pairnames.append((name.format("CAN"), name.format("GPS")))
-            cdata.to_csv(os.path.join(outputdir, name.format("CAN")), index=False)
-            gdata.to_csv(os.path.join(outputdir, name.format("GPS")), index=False)
-        else:
-            date = empty
-            name = f"{date}_{vin}_{{}}_Messages.csv"
-            pairnames.append((name.format("CAN"), name.format("GPS")))
-            with open(os.path.join(outputdir, name.format("CAN")), "w") as fw, open(
-                cdata
-            ) as fr:
-                fw.write(fr.read())
+        date = (
+            datetime.fromtimestamp(cdata.Time.iloc[0]).strftime("%Y-%m-%d-%H-%M-%S")
+            if not empty
+            else empty
+        )
+        name = f"{date}_{vin}_{{}}_Messages.csv"
+        can_n = os.path.join(outputdir, name.format("CAN"))
+        gps_n = os.path.join(outputdir, name.format("GPS"))
+        pairnames.append((os.path.abspath(can_n), os.path.abspath(gps_n)))
 
-            with open(os.path.join(outputdir, name.format("GPS")), "w") as fw, open(
-                gdata
-            ) as fr:
-                fw.write(fr.read())
+        if not disable_output:
+            if not empty:
+                cdata.to_csv(can_n, index=False)
+                gdata.to_csv(gps_n, index=False)
+            else:
+                with open(can_n, "w") as fw, open(cdata) as fr:
+                    fw.write(fr.read())
+
+                with open(gps_n, "w") as fw, open(gdata) as fr:
+                    fw.write(fr.read())
 
     return pairnames
 
