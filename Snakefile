@@ -12,9 +12,7 @@ CAN_WILD = glob_wildcards("{day}/{day2,.{10}}-{time}_{vin}_CAN_Messages.csv")
 CAN_WILD_OLD = glob_wildcards("{day}/{day2,.{10}}-{time}_{vin}_CAN_Message.csv")
 ZONE_WILD = glob_wildcards(ZONEFILE_DIR+"/zonefile_{vin}.json")
 
-def remove_not_in_vin(wildcard, check_vin, fields=None):
-    if fields is None:
-        fields = wildcard._fields
+def remove_not_in_vin(wildcard, check_vin):
     i = 0
     while i < len(wildcard.vin):
         if wildcard.vin[i] not in check_vin:
