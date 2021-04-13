@@ -4,13 +4,13 @@ config = {
     "output_dir": "../output"
 }
 
-ZONEFILE_DIR=config['zone_dir']
-BUILD_DIR=config['build_dir']
+ZONEFILE_DIR = config['zone_dir']
+BUILD_DIR = config['build_dir']
 OUTPUT_DIR = config['output_dir']
 
-CAN_WILD=glob_wildcards("{day}/{day2,.{10}}-{time}_{vin}_CAN_Messages.csv")
-CAN_WILD_OLD=glob_wildcards("{day}/{day2,.{10}}-{time}_{vin}_CAN_Message.csv")
-ZONE_WILD=glob_wildcards(ZONEFILE_DIR+"/zonefile_{vin}.json")
+CAN_WILD = glob_wildcards("{day}/{day2,.{10}}-{time}_{vin}_CAN_Messages.csv")
+CAN_WILD_OLD = glob_wildcards("{day}/{day2,.{10}}-{time}_{vin}_CAN_Message.csv")
+ZONE_WILD = glob_wildcards(ZONEFILE_DIR+"/zonefile_{vin}.json")
 
 def remove_not_in_vin(wildcard, check_vin, fields=None):
     if fields is None:
