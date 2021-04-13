@@ -50,7 +50,7 @@ def run(canfile, gpsfile, outdir, zonesfile, disable_output=False):
 
     orig_time, vin = check_parse_files(canfile, gpsfile, zonesfile)
     if any(map(csv_is_empty, (canfile, gpsfile))):
-        if outdir and not os.path.isdir(outdir):
+        if not os.path.isdir(outdir):
             os.makedirs(outdir)
         write_files(
             [(canfile, gpsfile)],
