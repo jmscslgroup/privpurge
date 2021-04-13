@@ -46,13 +46,20 @@ def get_arguments():
     return parser.parse_args()
 
 
-def run(canfile, gpsfile, outdir, zonesfile):
+def run(canfile, gpsfile, outdir, zonesfile, disable_output=False):
 
     orig_time, vin = check_parse_files(canfile, gpsfile, zonesfile)
     if any(map(csv_is_empty, (canfile, gpsfile))):
-        if not os.path.isdir(outdir):
+        if outdir and not os.path.isdir(outdir):
             os.makedirs(outdir)
-        write_files([(canfile, gpsfile)], vin, outdir, empty=orig_time)
+        write_files(
+            [(canfile, gpsfile)],
+            vin,
+            outdir,
+            empty=orig_time,
+            disable_output=disable_output,
+        )
+        print_info(os.path.abspath(canfile), os.path.abspath(gpsfile), [(None, None)])
         return
 
     candata, gpsdata, zones = preprocess(canfile, gpsfile, outdir, zonesfile)
@@ -62,9 +69,9 @@ def run(canfile, gpsfile, outdir, zonesfile):
 
     filepairs = remove(candata, gpsdata, timeregions)
 
-    pairnames = write_files(filepairs, vin, outdir)
+    pairnames = write_files(filepairs, vin, outdir, disable_output=disable_output)
 
-    print_info(os.path.basename(canfile), os.path.basename(gpsfile), pairnames)
+    print_info(os.path.abspath(canfile), os.path.abspath(gpsfile), pairnames)
 
 
 def main():
