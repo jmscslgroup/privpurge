@@ -1,4 +1,4 @@
-FROM python:3.8.0-slim as builder
+FROM python:3.8.0-slim
 
 RUN apt-get update
 
@@ -8,15 +8,10 @@ COPY requirements.txt .
 COPY setup.py .
 COPY privpurge/ privpurge
 
-RUN python -m pip install --user .
+RUN python -m pip install .
 
-
-# Production
-
-FROM python:3.8.0-slim as app
-
-COPY --from=builder /root/.local /root/.local
-ENV PATH=/root/.local/bin:$PATH
+RUN adduser --system --group --shell /bin/sh auser
+USER auser
 
 WORKDIR /data
 
