@@ -13,6 +13,4 @@ RUN python -m pip install .
 RUN adduser --system --group --shell /bin/sh auser
 USER auser
 
-WORKDIR /data
-
 ENTRYPOINT ["privpurge"]
