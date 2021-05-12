@@ -3,7 +3,7 @@ config = {
     "intermediate_dir": "snakemake-output",
     "build_dir": "../../publishable-circles",
     "input_dir": "../../private-circles"
-}
+} # find snakemake-output/ -type f | grep .err | sed 's/^.\{17\}//' | xargs -n 1 sh -c 'cp snakemake-output/$1 ../../publishable-circles/$1' sh
 
 ZONEFILE_DIR = config['zone_dir']
 BUILD_DIR = config['build_dir']
@@ -47,7 +47,9 @@ rule create:
         INTERMEDIATE_DIR + "/{vin}/libpanda/{day_folder}/{day,.{10}}-{time}_{vin}.out"
     shell:
         """
-        res=$(docker run --rm                       \
+        res=$(mkdir -p {params.build_dir} &&        \
+            docker run --rm                         \
+            -u $(id -u):$(id -g)                    \
             -v $(pwd)/{params.zone_dir}:/zonefiles  \
             -v $(pwd)/{params.build_dir}:/build     \
             -v $(pwd)/{params.input_dir}:/input     \
