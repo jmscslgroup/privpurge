@@ -1,29 +1,34 @@
+from functools import reduce
+
+
 def remove_split(df, timeregions, key):
 
     df.reset_index(drop=True, inplace=True)
 
-    rem = [[df.index[0] - 1]]
-    keep = []
+    private_bool = reduce(lambda x, y: x | y, [time @ df[key] for time in timeregions])
 
-    for time in timeregions:
-        to_remove = time @ df[key]
-        rem.append(to_remove)
+    if all(
+        ~private_bool
+    ):  # if there is nothing to remove, so inverse of mask is all True
+        return [df]
 
-    rem.append([df.index[-1] + 1])
+    private_regions = df[private_bool]
+    orig_idx = set(df.index)
+    private_idx = set(private_regions.index)
 
-    if [] in rem:
-        rem.remove([])
+    public_idx = sorted(list(orig_idx ^ private_idx))
+    public_lst = [[public_idx[0]]]
+    for cur, next in zip(public_idx, public_idx[1:]):
+        if cur + 1 != next:
+            public_lst.append([next])
+        else:
+            public_lst[-1].append(next)
 
-    for previous, current in zip(rem, rem[1:]):
-        if current and previous:
-            keep.append(list(range(previous[-1] + 1, current[0])))
-
-    if [] in keep:
-        keep.remove([])
+    public_lst = [l if len(l) > 1 else [l[0], l[0]] for l in public_lst]
 
     res = []
-    for l in keep:
-        res.append(df.iloc[l[0] : l[-1] + 1])
+    for section in public_lst:
+        res.append(df.iloc[section[0] : section[-1] + 1])
 
     return res
 
@@ -34,6 +39,7 @@ def remove(candata, gpsdata, timeregions):
     gpsdatas = remove_split(gpsdata, timeregions, "Gpstime")
 
     if len(candatas) != len(gpsdatas):
+        print(len(candatas), len(gpsdatas))
         raise ValueError(
             "Mismatching data in CAN and GPS files. A portion was removed from one but not the other."
         )

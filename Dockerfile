@@ -10,7 +10,4 @@ COPY privpurge/ privpurge
 
 RUN python -m pip install .
 
-RUN adduser --system --group --shell /bin/sh auser
-USER auser
-
 ENTRYPOINT ["privpurge"]

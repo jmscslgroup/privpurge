@@ -31,4 +31,4 @@ class time_region:
         return f"{(self.start, self.end)}"
 
     def __matmul__(self, df):  # intersection with dataframes
-        return df.loc[(self.start <= df) & (df <= self.end)].index.to_list()
+        return (self.start <= df) & (df <= self.end)
