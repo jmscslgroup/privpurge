@@ -5,47 +5,87 @@ def remove_split(df, timeregions, key):
 
     df.reset_index(drop=True, inplace=True)
 
-    intersections = [time @ df[key] for time in timeregions]
-    private_bool = reduce(lambda x, y: x | y, intersections)
-
-    if all(
-        ~private_bool
-    ):  # if there is nothing to remove, so inverse of mask is all True
+    if not timeregions:
         return [df]
 
-    private_regions = df[private_bool]
-    orig_idx = set(df.index)
-    private_idx = set(private_regions.index)
+    intersections = [time @ df[key] for time in timeregions]
+    public_bool = (~reduce(lambda x, y: x | y, intersections)).to_list()
 
-    public_idx = sorted(list(orig_idx ^ private_idx))
-    public_lst = [[public_idx[0]]]
-    for cur, next in zip(public_idx, public_idx[1:]):
-        if cur + 1 != next:
-            public_lst.append([next])
-        else:
-            public_lst[-1].append(next)
+    if all(public_bool):
+        return [df]
 
-    public_lst = [l if len(l) > 1 else [l[0], l[0]] for l in public_lst]
+    switch_idx = [
+        i for i, (x, y) in enumerate(zip(public_bool[:-1], public_bool[1:])) if x != y
+    ]
 
     res = []
-    for section in public_lst:
-        res.append(df.iloc[section[0] : section[-1] + 1])
+    last_check = 0
+    for i in switch_idx:
+        res.append(df.iloc[last_check : i + 1])
+        last_check = i + 1
+    res.append(df.iloc[last_check:])
 
-    return res
+    cur_len = 0
+    new_res = []
+    for subframe in res:
+        if public_bool[cur_len]:
+            new_res.append(subframe)
+        cur_len += len(subframe)
+
+    return new_res
+
+
+def get_intervals(df_list, key):
+    intervals = []
+    for df in df_list:
+        intervals.append((df[key].iloc[0], df[key].iloc[-1]))
+    return intervals
+
+
+def find_intersections(can_intervals, gps_intervals):
+
+    intersectsions = []
+
+    for cidx, cin in enumerate(can_intervals):
+        for gidx, gin in enumerate(gps_intervals):
+            cleft, cright = cin
+            gleft, gright = gin
+
+            ileft, iright = max(cleft, gleft), min(cright, gright)
+            if ileft > iright:
+                continue
+
+            intersectsions.append((cidx, gidx))
+
+    return intersectsions
+
+
+def smartzip(candatas, gpsdatas):
+
+    can_intervals = get_intervals(candatas, "Time")
+    gps_intervals = get_intervals(gpsdatas, "Gpstime")
+
+    intersections = find_intersections(can_intervals, gps_intervals)
+
+    # sorted by can_indices
+    sorted_intersections = sorted(intersections, key=lambda pair: pair[0])
+
+    # check gps_indices are strictly increasing
+    gps_indices = [g for _, g in intersections]
+    assert all(l < r for l, r in zip(gps_indices, gps_indices[1:]))
+
+    zipped = [(candatas[c], gpsdatas[g]) for c, g in sorted_intersections]
+
+    return zipped
 
 
 def remove(candata, gpsdata, timeregions):
 
-    if timeregions:
-        candatas = remove_split(candata, timeregions, "Time")
-        gpsdatas = remove_split(gpsdata, timeregions, "Gpstime")
-    else:
-        return [(candata, gpsdata)]
+    candatas = remove_split(candata, timeregions, "Time")
+    gpsdatas = remove_split(gpsdata, timeregions, "Gpstime")
 
-    if len(candatas) != len(gpsdatas):
-        print(len(candatas), len(gpsdatas))
-        raise ValueError(
-            "Mismatching data in CAN and GPS files. A portion was removed from one but not the other."
-        )
-
-    return zip(candatas, gpsdatas)
+    return (
+        zip(candatas, gpsdatas)
+        if len(candatas) == len(gpsdatas)
+        else smartzip(candatas, gpsdatas)
+    )

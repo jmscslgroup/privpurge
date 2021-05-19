@@ -1,6 +1,5 @@
 import os
 import re
-import sys
 
 from datetime import datetime, timedelta
 
@@ -13,10 +12,7 @@ def csv_is_empty(filename):
         l = f.readline()
         l2 = f.readline()
 
-    if not l or not l2:
-        return True
-    else:
-        return False
+    return not l or not l2
 
 
 def round_time(dt, round_to):
@@ -25,7 +21,12 @@ def round_time(dt, round_to):
     return dt + timedelta(0, rounding - seconds, -dt.microsecond)
 
 
-def write_files(filepairs, vin, outputdir, empty=None, disable_output=False):
+def write_files(
+    filepairs, vin, canfile, gpsfile, outputdir, empty=None, disable_output=False
+):
+
+    if not os.path.isdir(outputdir):
+        os.makedirs(outputdir)
 
     pairnames = []
 
@@ -52,7 +53,7 @@ def write_files(filepairs, vin, outputdir, empty=None, disable_output=False):
                 with open(gps_n, "w") as fw, open(gdata) as fr:
                     fw.write(fr.read())
 
-    return pairnames
+    print_info(os.path.abspath(canfile), os.path.abspath(gpsfile), pairnames)
 
 
 def print_info(canfile, gpsfile, pairnames):

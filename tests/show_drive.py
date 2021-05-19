@@ -1,5 +1,4 @@
 import json
-from pathlib import Path
 import folium
 import folium.plugins
 import tempfile
@@ -14,16 +13,16 @@ def plot_privpurge(message, outdir, filename=None):
 
     my_map = folium.Map()
 
-    for dirpath, dirnames, filenames in os.walk(outdir):
-        for fl in filenames:
-            if re.search(r".{37}_GPS_Messages.csv", fl):
-                with open(os.path.join(os.getcwd(), os.path.join(dirpath, fl))) as f:
-                    f.readline()
-                    points = [
-                        tuple(map(float, l.split(",")[2:4][::-1]))
-                        for l in f.readlines()
-                    ]
-                folium.vector_layers.PolyLine(points).add_to(my_map)
+    for fl in [
+        f for f in os.listdir(outdir) if os.path.isfile(os.path.join(outdir, f))
+    ]:
+        if re.search(r".{37}_GPS_Messages.csv", fl):
+            with open(os.path.join(os.getcwd(), os.path.join(outdir, fl))) as f:
+                f.readline()
+                points = [
+                    tuple(map(float, l.split(",")[2:4][::-1])) for l in f.readlines()
+                ]
+            folium.vector_layers.PolyLine(points).add_to(my_map)
 
     data = json.load(open(os.path.join(os.getcwd(), message)))
 
@@ -44,4 +43,27 @@ def plot_privpurge(message, outdir, filename=None):
     print(f"Map saved to: {filename}")
 
 
-plot_privpurge("../~test_3/zonefile_2T3MWRFVXLW056972.json", "../~test_3/build")
+import argparse
+
+
+def get_args():
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("directory")
+    parser.add_argument("zonefile")
+    parser.add_argument("-o", "--output")
+
+    return parser.parse_args()
+
+
+if __name__ == "__main__":
+    cwd = os.getcwd()
+
+    args = get_args()
+
+    plot_privpurge(
+        os.path.join(cwd, args.zonefile),
+        os.path.join(cwd, args.directory),
+        filename=args.output,
+    )

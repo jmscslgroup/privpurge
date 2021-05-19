@@ -1,7 +1,5 @@
 import argparse
-import os
 import sys
-import traceback
 
 from .preprocess import preprocess
 from .privacy_region import privacy_region
@@ -10,8 +8,6 @@ from .time_region import time_region
 from .utils import (
     check_parse_files,
     csv_is_empty,
-    gmt_error_date,
-    print_info,
     write_files,
 )
 
@@ -50,38 +46,30 @@ def run(canfile, gpsfile, outdir, zonesfile, disable_output=False):
 
     orig_time, vin = check_parse_files(canfile, gpsfile, zonesfile)
     if any(map(csv_is_empty, (canfile, gpsfile))):
-        if not os.path.isdir(outdir):
-            os.makedirs(outdir)
         write_files(
             [(canfile, gpsfile)],
             vin,
+            canfile,
+            gpsfile,
             outdir,
             empty=orig_time,
             disable_output=disable_output,
         )
-        print_info(os.path.abspath(canfile), os.path.abspath(gpsfile), [(None, None)])
         return
 
-    candata, gpsdata, zones = preprocess(canfile, gpsfile, outdir, zonesfile)
+    candata, gpsdata, zonejson = preprocess(canfile, gpsfile, zonesfile)
 
-    privregions = privacy_region.create_many(zones)
+    privregions = privacy_region.create_many(zonejson)
     timeregions = time_region.create_many(gpsdata, privregions)
 
     filepairs = remove(candata, gpsdata, timeregions)
 
-    pairnames = write_files(filepairs, vin, outdir, disable_output=disable_output)
-
-    print_info(os.path.abspath(canfile), os.path.abspath(gpsfile), pairnames)
+    write_files(filepairs, vin, canfile, gpsfile, outdir, disable_output=disable_output)
 
 
 def main():
     args = get_arguments()
-    canfile = args.can
-    gpsfile = args.gps
-    outdir = args.output
-    zonesfile = args.zones
-
-    run(canfile, gpsfile, outdir, zonesfile)
+    run(args.can, args.gps, args.output, args.zones)
 
 
 if __name__ == "__main__":
