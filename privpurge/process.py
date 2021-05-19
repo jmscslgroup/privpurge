@@ -5,7 +5,8 @@ def remove_split(df, timeregions, key):
 
     df.reset_index(drop=True, inplace=True)
 
-    private_bool = reduce(lambda x, y: x | y, [time @ df[key] for time in timeregions])
+    intersections = [time @ df[key] for time in timeregions]
+    private_bool = reduce(lambda x, y: x | y, intersections)
 
     if all(
         ~private_bool
@@ -35,8 +36,11 @@ def remove_split(df, timeregions, key):
 
 def remove(candata, gpsdata, timeregions):
 
-    candatas = remove_split(candata, timeregions, "Time")
-    gpsdatas = remove_split(gpsdata, timeregions, "Gpstime")
+    if timeregions:
+        candatas = remove_split(candata, timeregions, "Time")
+        gpsdatas = remove_split(gpsdata, timeregions, "Gpstime")
+    else:
+        return [(candata, gpsdata)]
 
     if len(candatas) != len(gpsdatas):
         print(len(candatas), len(gpsdatas))

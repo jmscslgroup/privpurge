@@ -44,4 +44,4 @@ def plot_privpurge(message, outdir, filename=None):
     print(f"Map saved to: {filename}")
 
 
-plot_privpurge("../~files/zonefile_5FNYF6H05HB089022.json", "../~files/build")
+plot_privpurge("../~test_3/zonefile_2T3MWRFVXLW056972.json", "../~test_3/build")

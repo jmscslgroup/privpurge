@@ -30,29 +30,40 @@ def standardize_time(candata, gpsdata):
     return candata, gpsdata
 
 
-def negative_checking(list):
+def create_negative_mask(grouped_list):
 
-    s1 = sum(len(l) for l in list)
-    last_negative_index = max(loc for loc, l in enumerate(list) if l[0] < 0)
-    negative_at_end = last_negative_index == len(list) - 1
+    list_ind_negative = [loc for loc, l in enumerate(grouped_list) if l[0] < 0]
+    if not list_ind_negative:
+        return True
+
+    last_negative_index = list_ind_negative[-1]
+    negative_at_end = last_negative_index == len(grouped_list) - 1
 
     if negative_at_end:
         raise ValueError(
             "Error found in gpsfile. Last grouped list has negative times."
         )
 
-    pos_bw_neg_indices = [i for i in range(0, negative_at_end) if list[i][0] > 0]
-    too_much_good_data = sum(len(list[i]) for i in pos_bw_neg_indices) > len(list[-1])
+    pos_bw_neg_indices = [
+        i for i in range(0, last_negative_index) if grouped_list[i][0] > 0
+    ]
+    too_much_good_data = sum(len(grouped_list[i]) for i in pos_bw_neg_indices) > len(
+        grouped_list[-1]
+    )
 
     if too_much_good_data:
         raise ValueError("Found too many good values before end of negatives.")
 
-    list = [[False] * len(list[i]) for i in range(negative_at_end + 1)] + [
-        [i > 0 for i in l] for l in list[negative_at_end + 1 :]
+    masked_llist = [
+        [False] * len(grouped_list[i])
+        if i <= last_negative_index
+        else [True] * len(grouped_list[i])
+        for i in range(len(grouped_list))
     ]
-    list = sum(list, start=[])
 
-    return list
+    masked_list = sum(masked_llist, start=[])
+
+    return masked_list
 
 
 def fix_gps(gpsdata):  # remove until consecutive negatives stop
@@ -61,9 +72,10 @@ def fix_gps(gpsdata):  # remove until consecutive negatives stop
         list(g)
         for k, g in itertools.groupby(gpsdata.Gpstime, lambda x: -1 if x < 0 else 1)
     ]
-    temp = negative_checking(temp)
+    temp = create_negative_mask(temp)
 
-    gpsdata = gpsdata[temp]
+    if temp is not True:
+        gpsdata = gpsdata[temp]
 
     return gpsdata
 
