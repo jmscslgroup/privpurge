@@ -153,3 +153,5 @@ dmypy.json
 .history
 
 ~*
+
+.DS_Store

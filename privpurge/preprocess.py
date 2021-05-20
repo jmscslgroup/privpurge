@@ -78,6 +78,9 @@ def preprocess(canfile, gpsfile, zonesfile):
     candata["MessageID"] = candata["MessageID"].astype(int)
     candata["MessageLength"] = candata["MessageLength"].astype(int)
 
+    gpsdata.Long = gpsdata.Long.astype("float64")
+    gpsdata.Lat = gpsdata.Lat.astype("float64")
+
     candata, gpsdata = standardize_time(candata, gpsdata)
 
     return candata, gpsdata, zonejson
