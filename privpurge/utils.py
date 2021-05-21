@@ -21,37 +21,28 @@ def round_time(dt, round_to):
     return dt + timedelta(0, rounding - seconds, -dt.microsecond)
 
 
-def write_files(
-    filepairs, vin, canfile, gpsfile, outputdir, empty=None, disable_output=False
-):
+def write_files(filepairs, vin, canfile, gpsfile, outputdir, write=True):
 
-    if not os.path.isdir(outputdir):
-        os.makedirs(outputdir)
+    if filepairs:
+        if not os.path.isdir(outputdir):
+            os.makedirs(outputdir)
 
-    pairnames = []
+        pairnames = []
+        for cdata, gdata in filepairs:
 
-    for cdata, gdata in filepairs:
+            date = datetime.fromtimestamp(cdata.Time.iloc[0]).strftime(
+                "%Y-%m-%d-%H-%M-%S"
+            )
+            name = f"{date}_{vin}_{{}}_Messages.csv"
+            can_n = os.path.join(outputdir, name.format("CAN"))
+            gps_n = os.path.join(outputdir, name.format("GPS"))
+            pairnames.append((os.path.abspath(can_n), os.path.abspath(gps_n)))
 
-        date = (
-            datetime.fromtimestamp(cdata.Time.iloc[0]).strftime("%Y-%m-%d-%H-%M-%S")
-            if not empty
-            else empty
-        )
-        name = f"{date}_{vin}_{{}}_Messages.csv"
-        can_n = os.path.join(outputdir, name.format("CAN"))
-        gps_n = os.path.join(outputdir, name.format("GPS"))
-        pairnames.append((os.path.abspath(can_n), os.path.abspath(gps_n)))
-
-        if not disable_output:
-            if not empty:
+            if write:
                 cdata.to_csv(can_n, index=False)
                 gdata.to_csv(gps_n, index=False)
-            else:
-                with open(can_n, "w") as fw, open(cdata) as fr:
-                    fw.write(fr.read())
-
-                with open(gps_n, "w") as fw, open(gdata) as fr:
-                    fw.write(fr.read())
+    else:
+        pairnames = []
 
     print_info(os.path.abspath(canfile), os.path.abspath(gpsfile), pairnames)
 
@@ -62,9 +53,12 @@ def print_info(canfile, gpsfile, pairnames):
     print(f"    {gpsfile}")
     print()
     print(f"Output:")
-    for can, gps in pairnames:
-        print(f"    {can}")
-        print(f"    {gps}")
+    if pairnames:
+        for can, gps in pairnames:
+            print(f"    {can}")
+            print(f"    {gps}")
+    else:
+        print(f"    No output.")
 
 
 def gmt_error_date(canfile, gpsfile):

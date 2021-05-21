@@ -47,13 +47,12 @@ def run(canfile, gpsfile, outdir, zonesfile, disable_output=False):
     orig_time, vin = check_parse_files(canfile, gpsfile, zonesfile)
     if any(map(csv_is_empty, (canfile, gpsfile))):
         write_files(
-            [(canfile, gpsfile)],
+            [],
             vin,
             canfile,
             gpsfile,
             outdir,
-            empty=orig_time,
-            disable_output=disable_output,
+            write=not disable_output,
         )
         return
 
@@ -64,7 +63,7 @@ def run(canfile, gpsfile, outdir, zonesfile, disable_output=False):
 
     filepairs = remove(candata, gpsdata, timeregions)
 
-    write_files(filepairs, vin, canfile, gpsfile, outdir, disable_output=disable_output)
+    write_files(filepairs, vin, canfile, gpsfile, outdir, write=not disable_output)
 
 
 def main():
