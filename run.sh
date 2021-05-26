@@ -45,8 +45,6 @@ if [ -z "$cores" ]; then cores="all"; log::info "cores not provided, using all c
 if [ ! "$dry_run" = true ]; then
         log::info "Pulling latest rpgolota/privpurge from docker"
         docker pull rpgolota/privpurge
-        log::info "Deactivating conda"
-        conda deactivate
         log::info "Activating local virtual environment"
         . .venv/bin/activate
         if [ ! -d "logs" ]; then
@@ -65,8 +63,6 @@ if [ ! "$dry_run" = true ]; then
 else
         log::info "Pulling latest rpgolota/privpurge from docker"
         log::dry_run "docker pull rpgolota/privpurge"
-        log::info "Deactivating conda"
-        log::dry_run "conda deactivate"
         log::info "Activating local virtual environment"
         log::dry_run ". .venv/bin/activate"
         if [ ! -d "logs" ]; then
