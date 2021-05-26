@@ -60,3 +60,16 @@ rule create:
             -z /{params.zonefile}                   \
             -o /build 2>&1) && echo "$res" > {output} || echo "$res" > {params.errfile}
         """
+        
+rule clean:
+    shell:
+    """
+    rm -rf {config[intermediate_dir]}
+    """
+    
+rule clean_all:
+    shell:
+    """
+    rm -rf {config[intermediate_dir]}
+    rm -rf {config[build_dir]}
+    """
