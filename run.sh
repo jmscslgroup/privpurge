@@ -59,7 +59,8 @@ if [ ! "$dry_run" = true ]; then
                 snakemake --cores 1 clean_all
         fi
         log::info "Running snakemake"
-        snakemake --cores "$cores" --keep-going > logs/"$run_id".txt
+        result=$(snakemake --cores "$cores" --keep-going)
+        echo "$result" > logs/"$run_id".txt
 else
         log::info "Pulling latest rpgolota/privpurge from docker"
         log::dry_run "docker pull rpgolota/privpurge"
