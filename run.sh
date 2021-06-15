@@ -21,9 +21,9 @@ usage: bash ${0} [ -d | --dry] [-h | --help]
 
        sync                       enter sync mode
        LOCATION                   {zones, private, publishable}
-       --pull=LOCATION            sync LOCATION from cyverse to local
-       --push=LOCATION            sync LOCATION to cyverse from local
-       --recent=TIME              only sync files created after TIME
+       --pull=LOCATION            sync LOCATION from cyverse to local [optional].
+       --push=LOCATION            sync LOCATION to cyverse from local [optional].
+       --age=TIME                 only sync files created after TIME, specified in minutes [optional].
 
        purge                      enter purge mode
        -c CORES | --cores=CORES   provide the number of cores to run with [optional].
@@ -73,8 +73,8 @@ if [ ! "$dry_run" = true ]; then
                                         pull=*) pull=${OPTARG#*=};;
                                         push) usage "Must provide value for --push";;
                                         push=*) push=${OPTARG#*=};;
-                                        recent) usage "Must provide value for --recent";;
-                                        recent=*) recent=${OPTARG#*=};;
+                                        age) usage "Must provide value for --age";;
+                                        age=*) age=${OPTARG#*=};;
                                         *) [ "$OPTERR" = 1 ] && [ "${optspec:0:1}" != ":" ] && usage "Unknows option --${OPTARG}";;
                                 esac;;
                                 :) usage "missing argument for -$OPTARG";;
@@ -88,12 +88,13 @@ if [ ! "$dry_run" = true ]; then
                 [[ ! -z "${push}" && "${push}" != @(zones|private|publishable) ]] && usage "Invalid option for push: ${push}"
                 [ ! -z "$pull" ] && log::info "Got pull command: ${pull}"
                 [ ! -z "$push" ] && log::info "Got push command: ${push}"
+                if [ ! -z "$age" ]; then agecmd="--age=$age"; fi
 
                 if [ ! -z "$pull" ]; then
                         dir="$(config_get $pull)"
                         idir="$(config_get i$pull)"
                         log::info "Syncing from cyverse (${idir}) to local (${dir})"
-                        cmd="irsync -r -v i:${idir} ${dir}"
+                        cmd="irsync -r -v ${agecmd} i:${idir} ${dir}"
                         $cmd
                 fi
 
@@ -101,7 +102,7 @@ if [ ! "$dry_run" = true ]; then
                         dir="$(config_get $push)"
                         idir="$(config_get i$push)"
                         log::info "Syncing from local (${dir}) to cyverse (${idir})"
-                        cmd="irsync -r -v ${dir} i:${idir}"
+                        cmd="irsync -r -v ${agecmd} ${dir} i:${idir}"
                         $cmd
                 fi
 
@@ -160,8 +161,8 @@ else
                                         pull=*) pull=${OPTARG#*=};;
                                         push) usage "Must provide value for --push";;
                                         push=*) push=${OPTARG#*=};;
-                                        recent) usage "Must provide value for --recent";;
-                                        recent=*) recent=${OPTARG#*=};;
+                                        age) usage "Must provide value for --age";;
+                                        age=*) age=${OPTARG#*=};;
                                         *) [ "$OPTERR" = 1 ] && [ "${optspec:0:1}" != ":" ] && usage "Unknows option --${OPTARG}";;
                                 esac;;
                                 :) usage "missing argument for -$OPTARG";;
@@ -175,12 +176,13 @@ else
                 [[ ! -z "${push}" && "${push}" != @(zones|private|publishable) ]] && usage "Invalid option for push: ${push}"
                 [ ! -z "$pull" ] && log::info "Got pull command: ${pull}"
                 [ ! -z "$push" ] && log::info "Got push command: ${push}"
+                if [ ! -z "$age" ]; then agecmd="--age=$age"; fi
 
                 if [ ! -z "$pull" ]; then
                         dir="$(config_get $pull)"
                         idir="$(config_get i$pull)"
                         log::info "Syncing from cyverse (${idir}) to local (${dir})"
-                        cmd="irsync -r -v i:${idir} ${dir}"
+                        cmd="irsync -r -v ${agecmd} i:${idir} ${dir}"
                         log::dry_run "$cmd"
                 fi
 
@@ -188,7 +190,7 @@ else
                         dir="$(config_get $push)"
                         idir="$(config_get i$push)"
                         log::info "Syncing from local (${dir}) to cyverse (${idir})"
-                        cmd="irsync -r -v ${dir} i:${idir}"
+                        cmd="irsync -r -v ${agecmd} ${dir} i:${idir}"
                         log::dry_run "$cmd"
                 fi
 
