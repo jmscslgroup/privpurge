@@ -15,20 +15,20 @@ usage: bash ${0} [ -d | --dry] [-h | --help]
        bash ${0} sync [--pull=LOCATION] [--push=LOCATION] [--recent=TIME]
        bash ${0} purge [-c CORES | --cores=CORES] [--clean] [--clean_all]
 
-     main                       commands that work in without modes
-     -h | --help                show help message and exit [optional].
-     -d | --dry                 dry run, just show what commands would be run [optional].
+       main                       commands that work before specifying mode
+       -h | --help                show help message and exit [optional].
+       -d | --dry                 dry run, just show what commands would be run [optional].
 
-     sync                       enter sync mode
-     LOCATION                   {zones, private, publishable}
-     --pull=LOCATION            sync LOCATION from cyverse to local
-     --push=LOCATION            sync LOCATION to cyverse from local
-     --recent=TIME              only sync files created after TIME
+       sync                       enter sync mode
+       LOCATION                   {zones, private, publishable}
+       --pull=LOCATION            sync LOCATION from cyverse to local
+       --push=LOCATION            sync LOCATION to cyverse from local
+       --recent=TIME              only sync files created after TIME
 
-     purge                      enter purge mode
-     -c CORES | --cores=CORES   provide the number of cores to run with [optional].
-     --clean                    run snakemake clean before snakemake [optional].
-     --clean_all                run slakemake clean_all before snakemake [optional].
+       purge                      enter purge mode
+       -c CORES | --cores=CORES   provide the number of cores to run with [optional].
+       --clean                    run snakemake clean before snakemake [optional].
+       --clean_all                run slakemake clean_all before snakemake [optional].
 EOF
 exit 1
 }
