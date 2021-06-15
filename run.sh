@@ -1,82 +1,240 @@
 #!/bin/bash
 
-cd /data/jmscslgroup/data_processing/scripts/privpurge
-source ./logging.sh
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+
+cd "$SCRIPT_DIR"
+source ./logging.shlib
+source ./config.shlib
 
 log::make_print_func "log::dry_run"  "${log_fore_magenta}"   "${log_set_bold}"
 
 usage() {
 if [ -n "$1" ]; then log::error "$1"; fi
 cat >&2 << EOF
-usage: bash ${0} [-c CORES] [-d] [-v] [-h]
-     -c CORES      provide the number of cores to run with [optional].
-     -n            new run, run snakemake clean before snakemake (don't use with p) [optional].
-     -p            pure run, run slakemake clean_all before snakemake (don't use with n) [optional].
-     -d            dry run, just show what commands would be run [optional].
-     -h            show help message and exit [optional].
+usage: bash ${0} [ -d | --dry] [-h | --help]
+       bash ${0} sync [--pull=LOCATION] [--push=LOCATION] [--recent=TIME]
+       bash ${0} purge [-c CORES | --cores=CORES] [--clean] [--clean_all]
+
+     main                       commands that work in without modes
+     -h | --help                show help message and exit [optional].
+     -d | --dry                 dry run, just show what commands would be run [optional].
+
+     sync                       enter sync mode
+     LOCATION                   {zones, private, publishable}
+     --pull=LOCATION            sync LOCATION from cyverse to local
+     --push=LOCATION            sync LOCATION to cyverse from local
+     --recent=TIME              only sync files created after TIME
+
+     purge                      enter purge mode
+     -c CORES | --cores=CORES   provide the number of cores to run with [optional].
+     --clean                    run snakemake clean before snakemake [optional].
+     --clean_all                run slakemake clean_all before snakemake [optional].
 EOF
 exit 1
 }
 
-# if [ $# -eq 0 ]; then usage; fi
+if [ $# -eq 0 ]; then usage; fi
 
-while getopts :c:npdh flag
+while getopts :-:dh flag
 do
         case "${flag}" in
-                 c) cores=${OPTARG};;
-                 n) new_run=true;;
-                 p) pure_run=true;;
-                 d) dry_run=true;;
-                 :) usage "missing argument for -$OPTARG";;
+                -)
+                case "${OPTARG}" in
+                        dry) dry_run=true;;
+                        help) usage;;
+                        *) [ "$OPTERR" = 1 ] && [ "${optspec:0:1}" != ":" ] && usage "Unknows option --${OPTARG}";;
+                esac;;
+                d) dry_run=true;;
+                h) usage;;
+                :) usage "missing argument for -$OPTARG";;
                 \?) usage "unknown option: -$OPTARG";;
         esac
 done
 shift $((OPTIND-1))
+OPTIND=1
 
-run_id=$(date +"%y%m%d-%H%M%S")
+[ "$dry_run" = true ] && log::info "Starting dry run."
 
-[ "$new_run" = true ] && [ "$pure_run" = true ] && usage "Options n (new run) and p (pure run) are mutually exclusive."
-
-if [ "$dry_run" = true ]; then log::info "Starting dry run"; fi
-if [ "$new_run" = true ]; then log::info "Starting new run"; fi
-if [ "$pure_run" = true ]; then log::info "Starting pure run"; fi
-if [ -z "$cores" ]; then cores="all"; log::info "cores not provided, using all cores"; fi
+run_type="$1"
+shift
+[[ "${run_type}" != @(sync|purge) ]] && usage "Invalid option for run type: ${run_type}"
+log::info "Entering run type: ${run_type}"
 
 if [ ! "$dry_run" = true ]; then
-        log::info "Pulling latest rpgolota/privpurge from docker"
-        docker pull rpgolota/privpurge
-        log::info "Activating local virtual environment"
-        . .venv/bin/activate
-        if [ ! -d "logs" ]; then
-                log::info "Making logs folder"
-                mkdir logs
-        fi
-        if [ "$new_run" = true ]; then
-                log::info "Running snakemake clean rule"
-                snakemake --cores 1 clean
-        elif [ "$pure_run" = true ]; then
-                log::info "Running snakemake clean_all rule"
-                snakemake --cores 1 clean_all
-        fi
-        log::info "Running snakemake"
-        snakemake --cores "$cores" --keep-going &> logs/"$run_id".txt
-else
-        log::info "Pulling latest rpgolota/privpurge from docker"
-        log::dry_run "docker pull rpgolota/privpurge"
-        log::info "Activating local virtual environment"
-        log::dry_run ". .venv/bin/activate"
-        if [ ! -d "logs" ]; then
-                log::info "Making logs folder"
-                log::dry_run "mkdir logs"
-        fi
-        if [ "$new_run" = true ]; then
-                log::info "Running snakemake clean rule"
-                log::dry_run "snakemake --cores 1 clean"
-        elif [ "$pure_run" = true ]; then
-                log::info "Running snakemake clean_all rule"
-                log::dry_run "snakemake --cores 1 clean_all"
-        fi
-        log::info "Running snakemake"
-        log::dry_run "snakemake --cores "$cores" --keep-going &> logs/"$run_id".txt"
-fi
 
+        if [ "${run_type}" = sync ]; then
+                
+                while getopts :-: flag
+                do
+                        case "${flag}" in
+                                -)
+                                case "${OPTARG}" in
+                                        pull) usage "Must provide value for --pull";;
+                                        pull=*) pull=${OPTARG#*=};;
+                                        push) usage "Must provide value for --push";;
+                                        push=*) push=${OPTARG#*=};;
+                                        recent) usage "Must provide value for --recent";;
+                                        recent=*) recent=${OPTARG#*=};;
+                                        *) [ "$OPTERR" = 1 ] && [ "${optspec:0:1}" != ":" ] && usage "Unknows option --${OPTARG}";;
+                                esac;;
+                                :) usage "missing argument for -$OPTARG";;
+                                \?) usage "unknown option: -$OPTARG";;
+                        esac
+                done
+                shift $((OPTIND-1))
+                OPTIND=1
+
+                [[ ! -z "${pull}" && "${pull}" != @(zones|private|publishable) ]] && usage "Invalid option for pull: ${pull}"
+                [[ ! -z "${push}" && "${push}" != @(zones|private|publishable) ]] && usage "Invalid option for push: ${push}"
+                [ ! -z "$pull" ] && log::info "Got pull command: ${pull}"
+                [ ! -z "$push" ] && log::info "Got push command: ${push}"
+
+                if [ ! -z "$pull" ]; then
+                        dir="$(config_get $pull)"
+                        idir="$(config_get i$pull)"
+                        log::info "Syncing from cyverse (${idir}) to local (${dir})"
+                        cmd="irsync -r -v i:${idir} ${dir}"
+                        $cmd
+                fi
+
+                if [ ! -z "$push" ]; then
+                        dir="$(config_get $push)"
+                        idir="$(config_get i$push)"
+                        log::info "Syncing from local (${dir}) to cyverse (${idir})"
+                        cmd="irsync -r -v ${dir} i:${idir}"
+                        $cmd
+                fi
+
+        elif [ "${run_type}" = purge ]; then
+                while getopts :c:-:h flag
+                do
+                        case "${flag}" in
+                                -)
+                                case "${OPTARG}" in
+                                        cores) usage "Must provide value for --cores";; # val="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ));
+                                        cores=*) cores=${OPTARG#*=};;
+                                        clean) clean=true;;
+                                        clean_all) clean_all=true;;
+                                        *) [ "$OPTERR" = 1 ] && [ "${optspec:0:1}" != ":" ] && usage "Unknows option --${OPTARG}";;
+                                esac;;
+                                c) cores=${OPTARG};;
+                                :) usage "missing argument for -$OPTARG";;
+                                \?) usage "unknown option: -$OPTARG";;
+                        esac
+                done
+                shift $((OPTIND-1))
+                OPTIND=1
+
+                run_id=$(date +"%y%m%d-%H%M%S")
+                if [ "$clean" = true ]; then log::info "Starting clean run"; fi
+                if [ "$clean_all" = true ]; then log::info "Starting clean_all run"; fi
+                if [ -z "$cores" ]; then cores="all"; log::info "cores not provided, using all cores"; fi
+
+                log::info "Pulling latest rpgolota/privpurge from docker"
+                docker pull rpgolota/privpurge
+                log::info "Activating local virtual environment"
+                . .venv/bin/activate
+                if [ ! -d "logs" ]; then
+                        log::info "Making logs folder"
+                        mkdir logs
+                fi
+                if [ "$clean" = true ]; then
+                        log::info "Running snakemake clean rule"
+                        snakemake --cores 1 clean
+                elif [ "$clean_all" = true ]; then
+                        log::info "Running snakemake clean_all rule"
+                        snakemake --cores 1 clean_all
+                fi
+                log::info "Running snakemake"
+                snakemake --cores "$cores" --keep-going &> logs/"$run_id".txt
+        fi
+
+else
+        if [ "${run_type}" = sync ]; then
+                while getopts :-: flag
+                do
+                        case "${flag}" in
+                                -)
+                                case "${OPTARG}" in
+                                        pull) usage "Must provide value for --pull";;
+                                        pull=*) pull=${OPTARG#*=};;
+                                        push) usage "Must provide value for --push";;
+                                        push=*) push=${OPTARG#*=};;
+                                        recent) usage "Must provide value for --recent";;
+                                        recent=*) recent=${OPTARG#*=};;
+                                        *) [ "$OPTERR" = 1 ] && [ "${optspec:0:1}" != ":" ] && usage "Unknows option --${OPTARG}";;
+                                esac;;
+                                :) usage "missing argument for -$OPTARG";;
+                                \?) usage "unknown option: -$OPTARG";;
+                        esac
+                done
+                shift $((OPTIND-1))
+                OPTIND=1
+
+                [[ ! -z "${pull}" && "${pull}" != @(zones|private|publishable) ]] && usage "Invalid option for pull: ${pull}"
+                [[ ! -z "${push}" && "${push}" != @(zones|private|publishable) ]] && usage "Invalid option for push: ${push}"
+                [ ! -z "$pull" ] && log::info "Got pull command: ${pull}"
+                [ ! -z "$push" ] && log::info "Got push command: ${push}"
+
+                if [ ! -z "$pull" ]; then
+                        dir="$(config_get $pull)"
+                        idir="$(config_get i$pull)"
+                        log::info "Syncing from cyverse (${idir}) to local (${dir})"
+                        cmd="irsync -r -v i:${idir} ${dir}"
+                        log::dry_run "$cmd"
+                fi
+
+                if [ ! -z "$push" ]; then
+                        dir="$(config_get $push)"
+                        idir="$(config_get i$push)"
+                        log::info "Syncing from local (${dir}) to cyverse (${idir})"
+                        cmd="irsync -r -v ${dir} i:${idir}"
+                        log::dry_run "$cmd"
+                fi
+
+        elif [ "${run_type}" = purge ]; then
+                while getopts :c:-:h flag
+                do
+                        case "${flag}" in
+                                -)
+                                case "${OPTARG}" in
+                                        cores) usage "Must provide value for --cores";; # val="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ));
+                                        cores=*) cores=${OPTARG#*=};;
+                                        clean) clean=true;;
+                                        clean_all) clean_all=true;;
+                                        *) [ "$OPTERR" = 1 ] && [ "${optspec:0:1}" != ":" ] && usage "Unknows option --${OPTARG}";;
+                                esac;;
+                                c) cores=${OPTARG};;
+                                :) usage "missing argument for -$OPTARG";;
+                                \?) usage "unknown option: -$OPTARG";;
+                        esac
+                done
+                shift $((OPTIND-1))
+                OPTIND=1
+
+                run_id=$(date +"%y%m%d-%H%M%S")
+                if [ "$clean" = true ]; then log::info "Starting clean run"; fi
+                if [ "$clean_all" = true ]; then log::info "Starting clean_all run"; fi
+                if [ -z "$cores" ]; then cores="all"; log::info "cores not provided, using all cores"; fi
+
+                log::info "Pulling latest rpgolota/privpurge from docker"
+                log::dry_run "docker pull rpgolota/privpurge"
+                log::info "Activating local virtual environment"
+                log::dry_run ". .venv/bin/activate"
+                if [ ! -d "logs" ]; then
+                        log::info "Making logs folder"
+                        log::dry_run "mkdir logs"
+                fi
+                if [ "$clean" = true ]; then
+                        log::info "Running snakemake clean rule"
+                        log::dry_run "snakemake --cores 1 clean"
+                fi
+                if [ "$clean_all" = true ]; then
+                        log::info "Running snakemake clean_all rule"
+                        log::dry_run "snakemake --cores 1 clean_all"
+                fi
+                log::info "Running snakemake"
+                log::dry_run "snakemake --cores "$cores" --keep-going &> logs/"$run_id".txt"
+        fi
+
+fi
