@@ -281,6 +281,7 @@ else
                 OPTIND=1
 
                 run_id=$(date +"%y%m%d-%H%M%S")
+                run_id="purge_${run_id}"
                 if [ "$clean" = true ]; then log::info "Starting clean run"; fi
                 if [ -z "$cores" ]; then cores="all"; log::info "cores not provided, using all cores"; fi
 
