@@ -66,10 +66,3 @@ rule clean:
         """
         rm -rf {config[intermediate_dir]}
         """
-    
-rule clean_all:
-    shell:
-        """
-        rm -rf {config[intermediate_dir]}
-        rm -rf {config[build_dir]}
-        """
