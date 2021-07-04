@@ -8,12 +8,16 @@ source ./config.shlib
 
 log::make_print_func "log::dry_run"  "${log_fore_magenta}"   "${log_set_bold}"
 
+PURGE_LOC=dir="$(config_get privpurge_dir)"
+STITCH_LOC=dir="$(config_get stitch_dir)"
+
 usage() {
 if [ -n "$1" ]; then log::error "$1"; fi
 cat >&2 << EOF
 usage: bash ${0} [ -d | --dry] [-h | --help]
        bash ${0} sync [--pull=LOCATION] [--push=LOCATION] [--recent=TIME]
-       bash ${0} purge [-c CORES | --cores=CORES] [--clean] [--clean_all]
+       bash ${0} purge [-c CORES | --cores=CORES] [--clean]
+       bash ${0} stitch [-c CORES | --cores=CORES ] [--clean]
 
        main                       commands that work before specifying mode
        -h | --help                show help message and exit [optional].
@@ -28,7 +32,10 @@ usage: bash ${0} [ -d | --dry] [-h | --help]
        purge                      enter purge mode
        -c CORES | --cores=CORES   provide the number of cores to run with [optional].
        --clean                    run snakemake clean before snakemake [optional].
-       --clean_all                run slakemake clean_all before snakemake [optional].
+
+       stitch                     enter stitch mode
+       -c CORES | --cores=CORES   provide the number of cores to run with [optional].
+       --clean                    run snakemake clean before snakemake [optional].
 EOF
 exit 1
 }
@@ -57,7 +64,7 @@ OPTIND=1
 
 run_type="$1"
 shift
-[[ "${run_type}" != @(sync|purge) ]] && usage "Invalid option for run type: ${run_type}"
+[[ "${run_type}" != @(sync|purge|stitch) ]] && usage "Invalid option for run type: ${run_type}"
 log::info "Entering run type: ${run_type}"
 
 if [ ! "$dry_run" = true ]; then
@@ -107,6 +114,15 @@ if [ ! "$dry_run" = true ]; then
                 fi
 
         elif [ "${run_type}" = purge ]; then
+
+                if [ ! -d "$PURGE_LOC" ]; then
+                        log::error "Could not find directory containing privpurge"
+                        exit 1
+                fi
+
+                log::info "Entering privpurge directory..."
+                cd "$PURGE_LOC"
+
                 while getopts :c:-:h flag
                 do
                         case "${flag}" in
@@ -115,7 +131,6 @@ if [ ! "$dry_run" = true ]; then
                                         cores) usage "Must provide value for --cores";; # val="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ));
                                         cores=*) cores=${OPTARG#*=};;
                                         clean) clean=true;;
-                                        clean_all) clean_all=true;;
                                         *) [ "$OPTERR" = 1 ] && [ "${optspec:0:1}" != ":" ] && usage "Unknows option --${OPTARG}";;
                                 esac;;
                                 c) cores=${OPTARG};;
@@ -127,8 +142,8 @@ if [ ! "$dry_run" = true ]; then
                 OPTIND=1
 
                 run_id=$(date +"%y%m%d-%H%M%S")
+                run_id="purge_${run_id}"
                 if [ "$clean" = true ]; then log::info "Starting clean run"; fi
-                if [ "$clean_all" = true ]; then log::info "Starting clean_all run"; fi
                 if [ -z "$cores" ]; then cores="all"; log::info "cores not provided, using all cores"; fi
 
                 log::info "Pulling latest rpgolota/privpurge from docker"
@@ -142,9 +157,52 @@ if [ ! "$dry_run" = true ]; then
                 if [ "$clean" = true ]; then
                         log::info "Running snakemake clean rule"
                         snakemake --cores 1 clean
-                elif [ "$clean_all" = true ]; then
-                        log::info "Running snakemake clean_all rule"
-                        snakemake --cores 1 clean_all
+                fi
+                log::info "Running snakemake"
+                snakemake --cores "$cores" --keep-going &> logs/"$run_id".txt
+
+        elif [ "${run_type}" = stitch ]; then
+
+                if [ ! -d "$STITCH_LOC" ]; then
+                        log::error "Could not find directory containing privpurge"
+                        exit 1
+                fi
+
+                log::info "Entering stitch directory..."
+                cd "$STITCH_LOC"
+
+                while getopts :c:-:h flag
+                do
+                        case "${flag}" in
+                                -)
+                                case "${OPTARG}" in
+                                        cores) usage "Must provide value for --cores";; # val="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ));
+                                        cores=*) cores=${OPTARG#*=};;
+                                        clean) clean=true;;
+                                        *) [ "$OPTERR" = 1 ] && [ "${optspec:0:1}" != ":" ] && usage "Unknows option --${OPTARG}";;
+                                esac;;
+                                c) cores=${OPTARG};;
+                                :) usage "missing argument for -$OPTARG";;
+                                \?) usage "unknown option: -$OPTARG";;
+                        esac
+                done
+                shift $((OPTIND-1))
+                OPTIND=1
+
+                run_id=$(date +"%y%m%d-%H%M%S")
+                run_id="stitch_${run_id}"
+                if [ "$clean" = true ]; then log::info "Starting clean run"; fi
+                if [ -z "$cores" ]; then cores="all"; log::info "cores not provided, using all cores"; fi
+
+                log::info "Activating local virtual environment"
+                . .venv/bin/activate
+                if [ ! -d "logs" ]; then
+                        log::info "Making logs folder"
+                        mkdir logs
+                fi
+                if [ "$clean" = true ]; then
+                        log::info "Running snakemake clean rule"
+                        snakemake --cores 1 clean
                 fi
                 log::info "Running snakemake"
                 snakemake --cores "$cores" --keep-going &> logs/"$run_id".txt
@@ -195,6 +253,15 @@ else
                 fi
 
         elif [ "${run_type}" = purge ]; then
+
+                if [ ! -d "$PURGE_LOC" ]; then
+                        log::error "Could not find directory containing privpurge"
+                        exit 1
+                fi
+
+                log::info "Entering privpurge directory..."
+                log::dry_run "cd $PURGE_LOC"
+
                 while getopts :c:-:h flag
                 do
                         case "${flag}" in
@@ -203,7 +270,6 @@ else
                                         cores) usage "Must provide value for --cores";; # val="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ));
                                         cores=*) cores=${OPTARG#*=};;
                                         clean) clean=true;;
-                                        clean_all) clean_all=true;;
                                         *) [ "$OPTERR" = 1 ] && [ "${optspec:0:1}" != ":" ] && usage "Unknows option --${OPTARG}";;
                                 esac;;
                                 c) cores=${OPTARG};;
@@ -216,7 +282,6 @@ else
 
                 run_id=$(date +"%y%m%d-%H%M%S")
                 if [ "$clean" = true ]; then log::info "Starting clean run"; fi
-                if [ "$clean_all" = true ]; then log::info "Starting clean_all run"; fi
                 if [ -z "$cores" ]; then cores="all"; log::info "cores not provided, using all cores"; fi
 
                 log::info "Pulling latest rpgolota/privpurge from docker"
@@ -231,9 +296,51 @@ else
                         log::info "Running snakemake clean rule"
                         log::dry_run "snakemake --cores 1 clean"
                 fi
-                if [ "$clean_all" = true ]; then
-                        log::info "Running snakemake clean_all rule"
-                        log::dry_run "snakemake --cores 1 clean_all"
+                log::info "Running snakemake"
+                log::dry_run "snakemake --cores "$cores" --keep-going &> logs/"$run_id".txt"
+
+        elif [ "${run_type}" = stitch ]; then
+
+                if [ ! -d "$STITCH_LOC" ]; then
+                        log::error "Could not find directory containing privpurge"
+                        exit 1
+                fi
+
+                log::info "Entering stitch directory..."
+                log::dry_run "cd $STITCH_LOC"
+
+                while getopts :c:-:h flag
+                do
+                        case "${flag}" in
+                                -)
+                                case "${OPTARG}" in
+                                        cores) usage "Must provide value for --cores";; # val="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ));
+                                        cores=*) cores=${OPTARG#*=};;
+                                        clean) clean=true;;
+                                        *) [ "$OPTERR" = 1 ] && [ "${optspec:0:1}" != ":" ] && usage "Unknows option --${OPTARG}";;
+                                esac;;
+                                c) cores=${OPTARG};;
+                                :) usage "missing argument for -$OPTARG";;
+                                \?) usage "unknown option: -$OPTARG";;
+                        esac
+                done
+                shift $((OPTIND-1))
+                OPTIND=1
+
+                run_id=$(date +"%y%m%d-%H%M%S")
+                run_id="stitch_${run_id}"
+                if [ "$clean" = true ]; then log::info "Starting clean run"; fi
+                if [ -z "$cores" ]; then cores="all"; log::info "cores not provided, using all cores"; fi
+
+                log::info "Activating local virtual environment"
+                log::dry_run ". .venv/bin/activate"
+                if [ ! -d "logs" ]; then
+                        log::info "Making logs folder"
+                        log::dry_run "mkdir logs"
+                fi
+                if [ "$clean" = true ]; then
+                        log::info "Running snakemake clean rule"
+                        log::dry_run "snakemake --cores 1 clean"
                 fi
                 log::info "Running snakemake"
                 log::dry_run "snakemake --cores "$cores" --keep-going &> logs/"$run_id".txt"
