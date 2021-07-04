@@ -8,8 +8,8 @@ source ./config.shlib
 
 log::make_print_func "log::dry_run"  "${log_fore_magenta}"   "${log_set_bold}"
 
-PURGE_LOC=dir="$(config_get privpurge_dir)"
-STITCH_LOC=dir="$(config_get stitch_dir)"
+PURGE_LOC="$(config_get privpurge_dir)"
+STITCH_LOC="$(config_get stitch_dir)"
 
 usage() {
 if [ -n "$1" ]; then log::error "$1"; fi
@@ -302,7 +302,7 @@ else
         elif [ "${run_type}" = stitch ]; then
 
                 if [ ! -d "$STITCH_LOC" ]; then
-                        log::error "Could not find directory containing privpurge"
+                        log::error "Could not find directory containing stitch"
                         exit 1
                 fi
 
