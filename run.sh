@@ -11,6 +11,8 @@ log::make_print_func "log::dry_run"  "${log_fore_magenta}"   "${log_set_bold}"
 PURGE_LOC="$(config_get privpurge_dir)"
 STITCH_LOC="$(config_get stitch_dir)"
 
+LOGS_DIR = "$SCRIPT_DIR/logs"
+
 usage() {
 if [ -n "$1" ]; then log::error "$1"; fi
 cat >&2 << EOF
@@ -150,16 +152,16 @@ if [ ! "$dry_run" = true ]; then
                 docker pull rpgolota/privpurge
                 log::info "Activating local virtual environment"
                 . .venv/bin/activate
-                if [ ! -d "logs" ]; then
+                if [ ! -d "$LOGS_DIR" ]; then
                         log::info "Making logs folder"
-                        mkdir logs
+                        mkdir $LOGS_DIR
                 fi
                 if [ "$clean" = true ]; then
                         log::info "Running snakemake clean rule"
                         snakemake --cores 1 clean
                 fi
                 log::info "Running snakemake"
-                snakemake --cores "$cores" --keep-going &> logs/"$run_id".txt
+                snakemake --cores "$cores" --keep-going &> $LOGS_DIR/"$run_id".txt
 
         elif [ "${run_type}" = stitch ]; then
 
@@ -196,16 +198,16 @@ if [ ! "$dry_run" = true ]; then
 
                 log::info "Activating local virtual environment"
                 . .venv/bin/activate
-                if [ ! -d "logs" ]; then
+                if [ ! -d "$LOGS_DIR" ]; then
                         log::info "Making logs folder"
-                        mkdir logs
+                        mkdir $LOGS_DIR
                 fi
                 if [ "$clean" = true ]; then
                         log::info "Running snakemake clean rule"
                         snakemake --cores 1 clean
                 fi
                 log::info "Running snakemake"
-                snakemake --cores "$cores" --keep-going &> logs/"$run_id".txt
+                snakemake --cores "$cores" --keep-going &> $LOGS_DIR/"$run_id".txt
         fi
 
 else
@@ -289,16 +291,16 @@ else
                 log::dry_run "docker pull rpgolota/privpurge"
                 log::info "Activating local virtual environment"
                 log::dry_run ". .venv/bin/activate"
-                if [ ! -d "logs" ]; then
+                if [ ! -d "$LOGS_DIR" ]; then
                         log::info "Making logs folder"
-                        log::dry_run "mkdir logs"
+                        log::dry_run "mkdir $LOGS_DIR"
                 fi
                 if [ "$clean" = true ]; then
                         log::info "Running snakemake clean rule"
                         log::dry_run "snakemake --cores 1 clean"
                 fi
                 log::info "Running snakemake"
-                log::dry_run "snakemake --cores "$cores" --keep-going &> logs/"$run_id".txt"
+                log::dry_run "snakemake --cores "$cores" --keep-going &> $LOGS_DIR/"$run_id".txt"
 
         elif [ "${run_type}" = stitch ]; then
 
@@ -335,16 +337,16 @@ else
 
                 log::info "Activating local virtual environment"
                 log::dry_run ". .venv/bin/activate"
-                if [ ! -d "logs" ]; then
+                if [ ! -d "$LOGS_DIR" ]; then
                         log::info "Making logs folder"
-                        log::dry_run "mkdir logs"
+                        log::dry_run "mkdir $LOGS_DIR"
                 fi
                 if [ "$clean" = true ]; then
                         log::info "Running snakemake clean rule"
                         log::dry_run "snakemake --cores 1 clean"
                 fi
                 log::info "Running snakemake"
-                log::dry_run "snakemake --cores "$cores" --keep-going &> logs/"$run_id".txt"
+                log::dry_run "snakemake --cores "$cores" --keep-going &> $LOGS_DIR/"$run_id".txt"
         fi
 
 fi
