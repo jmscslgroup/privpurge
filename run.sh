@@ -11,7 +11,7 @@ log::make_print_func "log::dry_run"  "${log_fore_magenta}"   "${log_set_bold}"
 PURGE_LOC="$(config_get privpurge_dir)"
 STITCH_LOC="$(config_get stitch_dir)"
 
-LOGS_DIR = "$SCRIPT_DIR/logs"
+LOGS_DIR="$SCRIPT_DIR/logs"
 
 usage() {
 if [ -n "$1" ]; then log::error "$1"; fi
