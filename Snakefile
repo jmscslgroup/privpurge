@@ -10,19 +10,29 @@ BUILD_DIR = config['build_dir']
 INTERMEDIATE_DIR = config['intermediate_dir']
 INPUT_DIR = config['input_dir']
 
-CAN_WILD = glob_wildcards(INPUT_DIR + "/{vin}/libpanda/{day_folder}/{day,.{10}}-{time}_{vin2}_CAN_Messages.csv") # CAN_Message not supported
-ZONE_WILD = glob_wildcards(ZONEFILE_DIR+"/zonefile_{vin}.json")
+CAN_WILD = glob_wildcards(INPUT_DIR + "/{vin,.{17}}/libpanda/{day_folder,.{10}}/{day,.{10}}-{time,.{8}}_{vin2,.{17}}_CAN_Messages.csv") # CAN_Message not supported
+ZONE_WILD = glob_wildcards(ZONEFILE_DIR+"/zonefile_{vin,.{17}}.json")
 
 def remove_not_in_vin(wildcard, check_vin):
     i = 0
     while i < len(wildcard.vin):
-        if wildcard.vin[i] not in check_vin:
+        if (wildcard.vin[i] not in check_vin):
+            for field in wildcard._fields:
+                del getattr(wildcard, field)[i]
+            i -= 1
+        i += 1
+
+def remove_mismatching_vins(wildcard):
+    i = 0
+    while i < len(wildcard.vin):
+        if (wildcard.vin[i] != wildcard.vin2[i]):
             for field in wildcard._fields:
                 del getattr(wildcard, field)[i]
             i -= 1
         i += 1
 
 remove_not_in_vin(CAN_WILD, ZONE_WILD.vin)
+remove_mismatching_vins(CAN_WILD)
 
 OUTPUT_FILES = expand(INTERMEDIATE_DIR + "/{vin}/libpanda/{day_folder}/{day}-{time}_{vin}.out", zip, day_folder=CAN_WILD.day_folder, day=CAN_WILD.day, time=CAN_WILD.time, vin=CAN_WILD.vin)
 
@@ -60,7 +70,7 @@ rule create:
             -z /{params.zonefile}                   \
             -o /build 2>&1) && echo "$res" > {output} || echo "$res" > {params.errfile}
         """
-        
+
 rule clean:
     shell:
         """
