@@ -168,7 +168,7 @@ elif [ "${run_type}" = purge ]; then
                 execute "snakemake --cores 1 clean"
         fi
         log::info "Running snakemake"
-        execute "snakemake --cores "$cores" --keep-going &> $LOGS_DIR/"$run_id".txt"
+        execute "snakemake --cores $cores --keep-going &> $LOGS_DIR/$run_id.txt"
 
 elif [ "${run_type}" = stitch ]; then
 
@@ -214,5 +214,5 @@ elif [ "${run_type}" = stitch ]; then
                 execute "snakemake --cores 1 clean"
         fi
         log::info "Running snakemake"
-        execute "snakemake --cores "$cores" --keep-going &> $LOGS_DIR/"$run_id".txt"
+        execute "snakemake --cores $cores --keep-going &> $LOGS_DIR/$run_id.txt"
 fi
