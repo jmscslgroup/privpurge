@@ -1,0 +1,1 @@
+0 * * * * bash /data/jmscslgroup/data_processing/scripts/run/copybag_purge_hourly.sh

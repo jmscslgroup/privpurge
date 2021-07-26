@@ -10,6 +10,7 @@ log::make_print_func "log::dry_run"  "${log_fore_magenta}"   "${log_set_bold}"
 
 PURGE_LOC="$(config_get privpurge_dir)"
 STITCH_LOC="$(config_get stitch_dir)"
+COPYBAG_LOC="$(config_get copybag_dir)"
 
 LOGS_DIR="$SCRIPT_DIR/logs"
 DRY_RUN=false
@@ -17,10 +18,11 @@ DRY_RUN=false
 usage() {
 if [ -n "$1" ]; then log::error "$1"; fi
 cat >&2 << EOF
-usage: bash ${0} [ -d | --dry] [-h | --help]
+usage: bash ${0} [-d | --dry] [-h | --help]
        bash ${0} sync [--pull=LOCATION] [--push=LOCATION] [--age=TIME]
        bash ${0} purge [-c CORES | --cores=CORES] [--clean]
-       bash ${0} stitch [-c CORES | --cores=CORES ] [--clean]
+       bash ${0} stitch [-c CORES | --cores=CORES] [--clean]
+       bash ${0} copybag [-c CORES | --cores=CORES]
 
        main                       commands that work before specifying mode
        -h | --help                show help message and exit [optional].
@@ -39,6 +41,9 @@ usage: bash ${0} [ -d | --dry] [-h | --help]
        stitch                     enter stitch mode
        -c CORES | --cores=CORES   provide the number of cores to run with [optional].
        --clean                    run snakemake clean before snakemake [optional].
+
+       copybag                    copy bagfiles from private to publishable
+       -c CORES | --cores=CORES   provide the number of cores to run with [optional].
 EOF
 exit 1
 }
@@ -75,7 +80,7 @@ OPTIND=1
 
 run_type="$1"
 shift
-[[ "${run_type}" != @(sync|purge|stitch) ]] && usage "Invalid option for run type: ${run_type}"
+[[ "${run_type}" != @(sync|purge|stitch|copybag) ]] && usage "Invalid option for run type: ${run_type}"
 log::info "Entering run type: ${run_type}"
 
 if [ "${run_type}" = sync ]; then
@@ -212,6 +217,47 @@ elif [ "${run_type}" = stitch ]; then
         if [ "$clean" = true ]; then
                 log::info "Running snakemake clean rule"
                 execute "snakemake --cores 1 clean"
+        fi
+        log::info "Running snakemake"
+        execute "snakemake --cores $cores --keep-going &> $LOGS_DIR/$run_id.txt"
+
+elif [ "${run_type}" = copybag ]; then
+
+        if [ ! -d "$COPYBAG_LOC" ]; then
+                log::error "Could not find directory containing copybag"
+                exit 1
+        fi
+
+        log::info "Entering copybag directory..."
+        execute "cd "$COPYBAG_LOC""
+
+        while getopts :c:-:h flag
+        do
+                case "${flag}" in
+                        -)
+                        case "${OPTARG}" in
+                                cores) usage "Must provide value for --cores";; # val="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ));
+                                cores=*) cores=${OPTARG#*=};;
+                                *) [ "$OPTERR" = 1 ] && [ "${optspec:0:1}" != ":" ] && usage "Unknows option --${OPTARG}";;
+                        esac;;
+                        c) cores=${OPTARG};;
+                        :) usage "missing argument for -$OPTARG";;
+                        \?) usage "unknown option: -$OPTARG";;
+                esac
+        done
+        shift $((OPTIND-1))
+        OPTIND=1
+
+        run_id=$(date +"%y%m%d-%H%M%S")
+        run_id="copybag_${run_id}"
+        if [ "$clean" = true ]; then log::info "Starting clean run"; fi
+        if [ -z "$cores" ]; then cores="all"; log::info "cores not provided, using all cores"; fi
+
+        log::info "Activating local virtual environment"
+        execute ". .venv/bin/activate"
+        if [ ! -d "$LOGS_DIR" ]; then
+                log::info "Making logs folder"
+                execute "mkdir $LOGS_DIR"
         fi
         log::info "Running snakemake"
         execute "snakemake --cores $cores --keep-going &> $LOGS_DIR/$run_id.txt"
