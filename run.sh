@@ -52,7 +52,7 @@ execute() {
         if [ "$DRY_RUN" = true ]; then
                 log::dry_run "$@"
         else
-                $@
+                eval "$@"
         fi
 }
 
