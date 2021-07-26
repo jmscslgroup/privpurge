@@ -109,7 +109,7 @@ if [ "${run_type}" = sync ]; then
         [[ ! -z "${push}" && "${push}" != @(zones|private|publishable) ]] && usage "Invalid option for push: ${push}"
         [ ! -z "$pull" ] && log::info "Got pull command: ${pull}"
         [ ! -z "$push" ] && log::info "Got push command: ${push}"
-        if [ ! -z "$age" ]; then agecmd="--age=$age"; fi
+        if [ ! -z "$age" ]; then agecmd="--age $age"; fi
 
         if [ ! -z "$pull" ]; then
                 dir="$(config_get $pull)"
