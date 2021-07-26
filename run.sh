@@ -18,7 +18,7 @@ usage() {
 if [ -n "$1" ]; then log::error "$1"; fi
 cat >&2 << EOF
 usage: bash ${0} [ -d | --dry] [-h | --help]
-       bash ${0} sync [--pull=LOCATION] [--push=LOCATION] [--recent=TIME]
+       bash ${0} sync [--pull=LOCATION] [--push=LOCATION] [--age=TIME]
        bash ${0} purge [-c CORES | --cores=CORES] [--clean]
        bash ${0} stitch [-c CORES | --cores=CORES ] [--clean]
 
