@@ -29,7 +29,8 @@ usage: bash ${0} [-d | --dry] [-h | --help]
        -d | --dry                 dry run, just show what commands would be run [optional].
 
        sync                       enter sync mode
-       LOCATION                   {zones, private, publishable}
+       ?LOCATION                  {zones, private, publishable}
+       ?INFO                      pull and push are mutually exclusive. Use only one at a time.
        --pull=LOCATION            sync LOCATION from cyverse to local [optional].
        --push=LOCATION            sync LOCATION to cyverse from local [optional].
        --age=TIME                 only sync files created after TIME, specified in minutes [optional].
@@ -105,18 +106,26 @@ if [ "${run_type}" = sync ]; then
         shift $((OPTIND-1))
         OPTIND=1
 
+        run_id=$(date +"%y%m%d-%H%M%S")
         [[ ! -z "${pull}" && "${pull}" != @(zones|private|publishable) ]] && usage "Invalid option for pull: ${pull}"
         [[ ! -z "${push}" && "${push}" != @(zones|private|publishable) ]] && usage "Invalid option for push: ${push}"
+        [ ! -z "$pull" ] && [ ! -z "$push" ] && usage "Pull and push are mutually exclusive. Use only one at a time."
         [ ! -z "$pull" ] && log::info "Got pull command: ${pull}"
         [ ! -z "$push" ] && log::info "Got push command: ${push}"
-        if [ ! -z "$age" ]; then agecmd="--age $age"; fi
+        [ ! -z "$age" ] && log::info "Got age: ${age}" && agecmd="--age $age"
+
+        if [ ! -d "$LOGS_DIR" ]; then
+                log::info "Making logs folder"
+                execute "mkdir $LOGS_DIR"
+        fi
 
         if [ ! -z "$pull" ]; then
                 dir="$(config_get $pull)"
                 idir="$(config_get i$pull)"
                 log::info "Syncing from cyverse (${idir}) to local (${dir})"
                 cmd="irsync -r -v ${agecmd} i:${idir} ${dir}"
-                execute "$cmd"
+                run_id="sync_pull_${run_id}"
+                output=$(execute "$cmd")
         fi
 
         if [ ! -z "$push" ]; then
@@ -124,7 +133,14 @@ if [ "${run_type}" = sync ]; then
                 idir="$(config_get i$push)"
                 log::info "Syncing from local (${dir}) to cyverse (${idir})"
                 cmd="irsync -r -v ${agecmd} ${dir} i:${idir}"
-                execute "$cmd"
+                run_id="sync_push_${run_id}"
+                ouptut=$(execute "$cmd")
+        fi
+
+        if [ "$DRY_RUN" = true ]; then
+                echo "$output"
+        else
+                execute "echo $output > $LOGS_DIR/$run_id.txt"
         fi
 
 elif [ "${run_type}" = purge ]; then
